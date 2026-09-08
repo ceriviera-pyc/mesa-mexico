@@ -9,7 +9,7 @@ from database import engine, obtener_db
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Mesa México - Plataforma Multinegocio de Reservas",
+    title="Mesa México Oficial- Plataforma Multinegocio de Reservas",
     version="1.0.0"
 )
 

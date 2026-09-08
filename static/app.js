@@ -11,7 +11,7 @@ async function ejecutarBusquedaReal() {
     contenedor.innerHTML = '<div class="alerta-vacia">Buscando mesas libres en la base de datos local...</div>';
 
     try {
-        const respuesta = await fetch(`http://127.0.0{encodeURIComponent(ciudad)}&personas=${personas}`);
+        const respuesta = await fetch(`/buscar?ciudad=${encodeURIComponent(ciudad)}&personas=${personas}`);
         const resultado = await respuesta.json();
 
         contenedor.innerHTML = '';

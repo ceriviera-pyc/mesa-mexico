@@ -1,0 +1,165 @@
+:root {
+    --bg-principal: #0f172a;
+    --bg-tarjeta: #1e293b;
+    --texto-claro: #f8fafc;
+    --texto-mutado: #94a3b8;
+    --acento-primario: #da3743; /* Rojo OpenTable */
+    --acento-verde: #10b981;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-color: var(--bg-principal);
+    color: var(--texto-claro);
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+.contenedor {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    letter-spacing: -1px;
+    margin-bottom: 0.5rem;
+}
+
+header h1 span {
+    color: var(--acento-primario);
+}
+
+header p {
+    color: var(--texto-mutado);
+    font-size: 1.1rem;
+}
+
+.seccion-buscador {
+    background-color: var(--bg-tarjeta);
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    margin-bottom: 2.5rem;
+}
+
+.grid-formulario {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 1.5rem;
+    align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+    .grid-formulario {
+        grid-template-columns: 1fr;
+    }
+}
+
+.grupo-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.grupo-campo label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--texto-mutado);
+    text-transform: uppercase;
+}
+
+.grupo-campo input, .grupo-campo select {
+    background-color: var(--bg-principal);
+    border: 2px solid #334155;
+    color: var(--texto-claro);
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.grupo-campo input:focus {
+    border-color: var(--acento-primario);
+}
+
+.btn-buscar {
+    background-color: var(--acento-primario);
+    color: var(--texto-claro);
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-buscar:hover {
+    background-color: #b91c1c;
+}
+
+.lista-resultados {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.tarjeta-restaurante {
+    background-color: var(--bg-tarjeta);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #334155;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.tarjeta-restaurante h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.badge-cocina {
+    align-self: flex-start;
+    background-color: #334155;
+    color: var(--texto-claro);
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.info-localizacion {
+    font-size: 0.9rem;
+    color: var(--texto-mutado);
+}
+
+.zonas-disponibles {
+    font-size: 0.85rem;
+    color: var(--acento-verde);
+    font-weight: 600;
+}
+
+.alerta-vacia {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: var(--texto-mutado);
+    border: 2px dashed #334155;
+    border-radius: 12px;
+}
+
+

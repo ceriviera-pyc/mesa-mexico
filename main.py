@@ -1,9 +1,14 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
+import os
+
 import models
 import schemas
 from database import engine, obtener_db
+
 
 # Fabricamos las tablas físicas en el disco duro si no existen
 models.Base.metadata.create_all(bind=engine)
@@ -13,12 +18,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-@app.get("/")
-def leer_raiz():
-    return {
-        "status": "success",
-        "mensaje": "Bienvenido al motor central de Mesa México. Servidor local operando al 100%."
-    }
+# 🔌 Montaje de la carpeta static para que el navegador pueda leer estilos.css y app.js
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# 🌐 INTERFAZ VISUAL (FRONTEND): Muestra la pantalla elegante de búsqueda al usuario
+@app.get("/", response_class=HTMLResponse)
+def leer_interfaz_visual():
+    ruta_html = os.path.join(os.path.dirname(__file__), "index.html")
+    with open(ruta_html, "r", encoding="utf-8") as f:
+        return f.read()
+
 
 # 🔍 RUTA DE CONSULTA: Listar los restaurantes registrados
 @app.get("/restaurantes")

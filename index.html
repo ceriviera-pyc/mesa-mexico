@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa México - Reservas en un Clic</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <!-- 🎨 Enlazamos tu nuevo archivo CSS externo -->
+    <link rel="stylesheet" href="/static/estilos.css">
+</head>
+<body>
+
+    <div class="contenedor">
+        <header>
+            <h1>Mesa <span>México</span></h1>
+            <p>Plataforma Multinegocio de Reservas Nacionales</p>
+        </header>
+
+        <section class="seccion-buscador">
+            <div class="grid-formulario">
+                <div class="grupo-campo">
+                    <label for="input-ciudad">¿A dónde vas, Rafael?</label>
+                    <input type="text" id="input-ciudad" placeholder="Ej. Playa del Carmen, CDMX..." value="Playa del Carmen">
+                </div>
+                <div class="grupo-campo">
+                    <label for="select-personas">Personas</label>
+                    <select id="select-personas">
+                        <option value="2">2 personas</option>
+                        <option value="4" selected>4 personas</option>
+                        <option value="6">6 personas</option>
+                        <option value="8">8 personas</option>
+                    </select>
+                </div>
+                <button class="btn-buscar" onclick="ejecutarBusquedaReal()">Buscar Mesas</button>
+            </div>
+        </section>
+
+        <section class="lista-resultados" id="contenedor-resultados">
+            <div class="alerta-vacia">
+                Ingresa una ciudad de México arriba y haz clic en "Buscar Mesas" para consultar disponibilidad en tiempo real.
+            </div>
+        </section>
+    </div>
+
+    <!-- 🧠 Enlazamos tu nuevo archivo JavaScript externo -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
+
+

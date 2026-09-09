@@ -1,283 +1,216 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
-import os
+import database, models, schemas
+import datetime as dt
 
-import models
-import schemas
-from database import engine, obtener_db
+app = FastAPI(title="Mesa México - API SaaS")
 
-
-# Fabricamos las tablas físicas en el disco duro si no existen
-models.Base.metadata.create_all(bind=engine)
-
-app = FastAPI(
-    title="Mesa México Oficial- Plataforma Multinegocio de Reservas",
-    version="1.0.0"
+# 🔌 Configuración de CORS para evitar bloqueos de red
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# 🔌 Montaje de la carpeta static para que el navegador pueda leer estilos.css y app.js
+# 📂 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# 🌐 INTERFAZ VISUAL (FRONTEND): Muestra la pantalla elegante de búsqueda al usuario
-@app.get("/", response_class=HTMLResponse)
-def leer_interfaz_visual():
-    ruta_html = os.path.join(os.path.dirname(__file__), "index.html")
-    with open(ruta_html, "r", encoding="utf-8") as f:
-        return f.read()
-
-
-# 🔍 RUTA DE CONSULTA: Listar los restaurantes registrados
-@app.get("/restaurantes")
-def listar_restaurantes(db: Session = Depends(obtener_db)):
-    restaurantes = db.query(models.Restaurante).all()
-    return {"total": len(restaurantes), "data": restaurantes}
-
-
-# 📝 RUTA DE REGISTRO (POST): Formulario para dar de alta un restaurante nuevo en México
-@app.post("/restaurantes")
-def crear_restaurante(restaurante: schemas.RestauranteCreate, db: Session = Depends(obtener_db)):
-    # Creamos la entidad mapeada con la base de datos usando los datos del formulario
-    nuevo_negocio = models.Restaurante(
-        nombre=restaurante.nombre,
-        ciudad=restaurante.ciudad,
-        estado=restaurante.estado,
-        tipo_cocina=restaurante.tipo_cocina
-    )
-    
-    db.add(nuevo_negocio)
-    db.commit()          # Guardamos físicamente en la base de datos
-    db.refresh(nuevo_negocio)  # Refrescamos para obtener el ID único asignado por SQL
-    
-    return {
-        "status": "success",
-        "mensaje": f"¡Éxito! El restaurante '{nuevo_negocio.nombre}' ha sido registrado en {nuevo_negocio.ciudad} con el ID {nuevo_negocio.id}.",
-        "data": nuevo_negocio
-    }
-    
-    
-
-# 🔍 RUTA DE CONSULTA: Listar todos los clientes registrados en la plataforma
-@app.get("/clientes")
-def listar_clientes(db: Session = Depends(obtener_db)):
-    clientes = db.query(models.Cliente).all()
-    return {"total": len(clientes), "data": clientes}
-
-
-# 👤 RUTA DE REGISTRO (POST): Dar de alta un comensal nuevo en el sistema
-@app.post("/clientes")
-def crear_cliente(cliente: schemas.ClienteCreate, db: Session = Depends(obtener_db)):
-    # 🕵️‍♂️ Validación crucial: Verificar si el correo ya existe en el sistema nacional
-    correo_existe = db.query(models.Cliente).filter(models.Cliente.correo == cliente.correo).first()
-    if correo_existe:
-        raise HTTPException(
-            status_code=400, 
-            detail="🚫 ERROR: Este correo electrónico ya está registrado con otro cliente en México."
-        )
-        
-    nuevo_cliente = models.Cliente(
-        nombre=cliente.nombre,
-        telefono=cliente.telefono,
-        correo=cliente.correo.lower().strip()
-    )
-    
-    db.add(nuevo_cliente)
-    db.commit()          # Guardamos físicamente en la base de datos mesa_mexico.db
-    db.refresh(nuevo_cliente)
-    
-    return {
-        "status": "success",
-        "mensaje": f"¡Éxito! El cliente '{nuevo_cliente.nombre}' ha sido registrado exitosamente con el ID {nuevo_cliente.id}.",
-        "data": nuevo_cliente
-    }
-
-
-from datetime import datetime
-
-# 🔍 RUTA DE CONSULTA: Ver el historial global de reservas en México
-@app.get("/reservas")
-def listar_reservas(db: Session = Depends(obtener_db)):
-    reservas = db.query(models.Reserva).all()
-    return {"total": len(reservas), "data": reservas}
-
-
-# 📅 RUTA DE RESERVA (POST): El motor inteligente que busca mesa libre y bloquea el horario
-@app.post("/reservas")
-def crear_reserva(reserva: schemas.ReservaCreate, db: Session = Depends(obtener_db)):
+def obtener_db():
+    db = database.SessionLocal()
     try:
-        # Convertimos los textos de fecha y hora en objetos reales de tiempo de Python
-        fecha_obj = datetime.strptime(reserva.fecha, "%Y-%m-%d").date()
-        hora_obj = datetime.strptime(reserva.hora, "%H:%M").time()
-    except ValueError:
-        raise HTTPException(status_code=400, detail="🚫 Formato incorrecto. Use Fecha: YYYY-MM-DD y Hora: HH:MM")
+        yield db
+    finally:
+        db.close()
 
-    # 1. Buscar todas las mesas de ese restaurante específico que aguanten a los comensales
-    mesas_candidatas = db.query(models.Mesa).filter(
-        models.Mesa.restaurante_id == reserva.restaurante_id,
-        models.Mesa.capacidad_max >= reserva.num_comensales
-    ).all()
+# 🏠 VISTA PRINCIPAL: Cargar la pantalla web
+@app.get("/")
+def leer_raiz():
+    return FileResponse("index.html")
 
-    if not mesas_candidatas:
-        raise HTTPException(status_code=404, detail="🚫 Lo sentimos, el restaurante no tiene mesas con esa capacidad.")
-
-    # 2. El algoritmo busca cuál de esas mesas está libre en el horario solicitado
-    mesa_asignada = None
-    for mesa in mesas_candidatas:
-        # Buscamos si esta mesa en específico ya tiene una reserva activa que choque a esa hora
-        choque = db.query(models.Reserva).filter(
-            models.Reserva.mesa_id == mesa.id,
-            models.Reserva.fecha == fecha_obj,
-            models.Reserva.hora == hora_obj,
-            models.Reserva.status == "Confirmada"
-        ).first()
-        
-        # ¡Si no hay choque, encontramos la mesa perfecta!
-        if not choque:
-            mesa_asignada = mesa
-            break
-
-    # 3. Si el ciclo terminó y no encontramos ninguna mesa libre, detenemos el proceso
-    if not mesa_asignada:
-        raise HTTPException(
-            status_code=400, 
-            detail="🚫 COMPLETO: No hay mesas disponibles para esa cantidad de personas en la fecha y hora seleccionadas."
-        )
-
-    # 4. Si hay mesa libre, el sistema la aparta físicamente en la base de datos
-    nueva_reserva = models.Reserva(
-        restaurante_id=reserva.restaurante_id,
-        mesa_id=mesa_asignada.id,
-        cliente_id=reserva.cliente_id,
-        fecha=fecha_obj,
-        hora=hora_obj,
-        num_comensales=reserva.num_comensales
-    )
-
-    db.add(nueva_reserva)
-    db.commit()  # Guardamos el candado físico en mesa_mexico.db
-    db.refresh(nueva_reserva)
-
-    return {
-        "status": "success",
-        "mensaje": f"¡RESERVA CONFIRMADA EXITOSAMENTE! Se le ha asignado la '{mesa_asignada.numero_mesa}' en la zona '{mesa_asignada.zona}'.",
-        "detalles": {
-            "reserva_id": nueva_reserva.id,
-            "restaurante_id": nueva_reserva.restaurante_id,
-            "mesa": mesa_asignada.numero_mesa,
-            "zona": mesa_asignada.zona,
-            "fecha": str(nueva_reserva.fecha),
-            "hora": str(nueva_reserva.hora)
-        }
-    }       
-
-
-# 🔍 MOTOR DE BÚSQUEDA AVANZADO: Filtrar restaurantes con mesas libres por Ciudad y Capacidad
+# 🔍 MOTOR DE BÚSQUEDA DINÁMICO: Consulta real en las celdas de mesa_mexico.db
 @app.get("/buscar")
-def buscar_disponibilidad_ciudad(ciudad: str, personas: int, db: Session = Depends(obtener_db)):
-    # 1. Buscamos todos los restaurantes que estén en la ciudad solicitada y activos
-    restaurantes_locales = db.query(models.Restaurante).filter(
-        models.Restaurante.ciudad.like(f"%{ciudad.strip()}%"),
-        models.Restaurante.activo == True
-    ).all()
-
-    if not restaurantes_locales:
-        return {
-            "status": "success",
-            "mensaje": f"Por el momento no hay restaurantes registrados en la ciudad de '{ciudad}'.",
-            "data": []
-        }
-
-    resultado_busqueda = []
-
-    # 2. Analizamos restaurante por restaurante para ver si tienen mesas que aguanten al grupo
-    for resto in restaurantes_locales:
-        mesas_aptas = db.query(models.Mesa).filter(
+def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session = Depends(obtener_db)):
+    # 1. Buscamos en las tablas todos los restaurantes que coincidan con la ciudad de forma elástica
+    ciudad_limpia = ciudad.lower().strip()
+    restaurantes = db.query(models.Restaurante).filter(models.Restaurante.ciudad.ilike(f"%{ciudad_limpia}%")).all()
+    
+    lista_respuesta = []
+    
+    # 2. Mapeamos cada restaurante encontrado en el disco duro con sus datos reales
+    for resto in restaurantes:
+        # Jalamos sus zonas de mesas compatibles desde la columna capacidad_max
+        mesas_validas = db.query(models.Mesa).filter(
             models.Mesa.restaurante_id == resto.id,
             models.Mesa.capacidad_max >= personas
         ).all()
         
-        # Si el restaurante tiene infraestructura física para ese número de personas, lo añadimos como opción disponible
-        if mesas_aptas:
-            resultado_busqueda.append({
-                "restaurante_id": resto.id,
-                "nombre": resto.nombre,
-                "ciudad": resto.ciudad,
-                "estado": resto.estado,
-                "tipo_cocina": resto.tipo_cocina,
-                "mesas_compatibles_zonas": list(set([m.zona for m in mesas_aptas])) # Lista de zonas disponibles (Terraza, Salón, etc.)
-            })
+        zonas_libres = list(set([m.zona for m in mesas_validas])) if mesas_validas else ["Terraza"]
+        
+        # 🖼️ DIRECCIÓN MULTIMEDIA INTELIGENTE: Si la celda está vacía, asigna fotos reales .jpg
+        foto_default = "https://unsplash.com"
+        if "mariscos" in resto.nombre.lower():
+            foto_default = "https://unsplash.com" # Mariscos Riviera
 
+        lista_respuesta.append({
+            "id": resto.id,
+            "nombre": resto.nombre,
+            "tipo_cocina": resto.tipo_cocina,
+            "ciudad": resto.ciudad,
+            "estado": resto.estado,
+            "imagen_url": resto.imagen_url if resto.imagen_url else foto_default,  # 👈 Usa la foto real o el respaldo premium
+            "sitio_web": resto.sitio_web,
+            "mesas_compatibles_zonas": zonas_libres
+        })
+
+        
     return {
         "status": "success",
-        "criterio": f"Búsqueda en '{ciudad}' para un grupo de {personas} personas.",
-        "total_opciones_encontradas": len(resultado_busqueda),
-        "restaurantes_disponibles": resultado_busqueda
+        "restaurantes_disponibles": lista_respuesta
     }
+
+
+
+# 🔑 LOGIN DIARIO REAL: Validación desde las celdas del .db
+@app.get("/clientes/login")
+@app.post("/clientes/login")
+def login_diario_cliente(credenciales: schemas.ClienteLogin, db: Session = Depends(obtener_db)):
+    correo_limpio = credenciales.correo.lower().strip()
+    cliente = db.query(models.Cliente).filter(models.Cliente.correo == correo_limpio).first()
     
-    
-# 🔄 RUTA DE ACTUALIZACIÓN (PATCH): Cambiar el estatus de una reserva (Confirmada / Asistió / Cancelada)
-@app.patch("/reservas/{reserva_id}")
-def actualizar_estatus_reserva(reserva_id: int, actualizacion: schemas.ReservaStatusUpdate, db: Session = Depends(obtener_db)):
-    # 1. Buscamos si la reserva existe físicamente en la base de datos local
-    reserva_existente = db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()
-    
-    if not reserva_existente:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"🚫 ERROR: No se encontró ninguna reservación con el ID {reserva_id} en el sistema."
-        )
-    
-    # 2. Validamos que el estatus ingresado sea uno de los oficiales de la plataforma
-    estatus_limpio = actualizacion.status.strip().capitalize()
-    if estatus_limpio not in ["Confirmada", "Asistió", "Cancelada"]:
-        raise HTTPException(
-            status_code=400, 
-            detail="🚫 Estatus inválido. Use únicamente: 'Confirmada', 'Asistió' o 'Cancelada'."
-        )
-    
-    # 3. Aplicamos el cambio de estatus en mesa_mexico.db
-    reserva_existente.status = estatus_limpio
-    db.commit()             # Guardamos los cambios físicamente en el disco duro
-    db.refresh(reserva_existente)
-    
+    if not cliente or cliente.password != credenciales.password:
+        raise HTTPException(status_code=401, detail="🚫 Credenciales incorrectas.")
+        
     return {
         "status": "success",
-        "mensaje": f"¡Éxito! La reservación número {reserva_existente.id} ha sido actualizada a '{reserva_existente.status}'.",
-        "data": {
-            "reserva_id": reserva_existente.id,
-            "restaurante": reserva_existente.restaurante.nombre,
-            "mesa_asignada": reserva_existente.mesa.numero_mesa,
-            "nuevo_status": reserva_existente.status
-        }
-    }         
+        "mensaje": f"¡Inicio de sesión exitoso! Bienvenido, {cliente.nombre}.",
+        "cliente": { "id": cliente.id, "nombre": cliente.nombre, "correo": cliente.correo }
+    }
+
+# 🏢 REGISTRO DE SOCIOS COMERCIALES (EMPRESAS)
+@app.post("/empresa/registrar")
+def registrar_cuenta_empresarial(cliente: schemas.ClienteCreate, db: Session = Depends(obtener_db)):
+    correo_limpio = cliente.correo.lower().strip()
+    existe = db.query(models.Cliente).filter(models.Cliente.correo == correo_limpio).first()
     
-    
-# 🗑️ RUTA DE ELIMINACIÓN (DELETE): Dar de baja un restaurante y limpiar su inventario físico
-@app.delete("/restaurantes/{restaurante_id}")
-def eliminar_restaurante_sistema(restaurante_id: int, db: Session = Depends(obtener_db)):
-    # 1. Buscamos si el restaurante existe físicamente en la base de datos
-    restaurante_existente = db.query(models.Restaurante).filter(models.Restaurante.id == restaurante_id).first()
-    
-    if not restaurante_existente:
-        raise HTTPException(
-            status_code=404, 
-            detail=f"🚫 ERROR: No se encontró ningún restaurante registrado con el ID {restaurante_id}."
-        )
-    
-    # Guardamos el nombre temporalmente antes de borrarlo para el mensaje de éxito
-    nombre_borrado = restaurante_existente.nombre
-    ciudad_borrada = restaurante_existente.ciudad
-    
-    # 2. Ejecutamos la baja física en la base de datos local
-    db.delete(restaurante_existente)
-    db.commit()  # SQL ejecuta la cascada y borra mesas y reservas de este negocio automáticamente
-    
+    if existe:
+        raise HTTPException(status_code=400, detail="🚫 ERROR: Este correo de empresa ya existe.")
+
+    nueva_empresa = models.Cliente(
+        nombre=cliente.nombre,
+        telefono=cliente.telefono,
+        correo=correo_limpio,
+        password=cliente.password,
+        rol="empresa",
+        verificado=True
+    )
+    db.add(nueva_empresa)
+    db.commit()
+    db.refresh(nueva_empresa)
     return {
         "status": "success",
-        "mensaje": f"¡BAJA COMPLETADA! El restaurante '{nombre_borrado}' de {ciudad_borrada} y todo su inventario de mesas/reservas han sido eliminados de forma permanente de la plataforma nacional."
-    }    
+        "mensaje": f"¡Cuenta empresarial de '{cliente.nombre}' creada con éxito!",
+        "empresa_id": nueva_empresa.id
+    }
+
+# 🖼️ ALTA DE RESTAURANTE REAL (CONEXIÓN RELACIONAL COMPLETA)
+@app.post("/restaurantes/crear")
+def crear_restaurante_empresarial(restaurante: schemas.RestauranteCreate, empresa_id: int, db: Session = Depends(obtener_db)):
+    dueno = db.query(models.Cliente).filter(models.Cliente.id == empresa_id, models.Cliente.rol == "empresa").first()
+    if not dueno:
+        raise HTTPException(status_code=403, detail="🔒 ACCESO DENEGADO: ID de empresa no válido.")
+
+    nuevo_local = models.Restaurante(
+        nombre=restaurante.nombre,
+        ciudad=restaurante.ciudad,
+        estado=restaurante.estado,
+        tipo_cocina=restaurante.tipo_cocina,
+        imagen_url=restaurante.imagen_url,
+        sitio_web=restaurante.sitio_web,
+        dueno_id=empresa_id,
+        activo=True
+    )
+    db.add(nuevo_local)
+    db.commit()
+    db.refresh(nuevo_local)
     
-    
-    
+    primera_mesa = models.Mesa(
+        numero_mesa="1",
+        capacidad_max=4,
+        zona="Terraza",
+        restaurante_id=nuevo_local.id
+    )
+    db.add(primera_mesa)
+    db.commit()
+    return {
+        "status": "success",
+        "restaurantes_disponibles": f"¡El restaurante '{restaurante.nombre}' ha sido dado de alta con éxito!",
+        "restaurante_id": nuevo_local.id
+    }
+
+# 📅 MOTOR RELACIONAL MULTIUSUARIO: Lógica dinámica con módulo antichoque de 2 horas
+@app.post("/reservas/rapida")
+def crear_reserva_rapida_horario(restaurante_id: int, hora_texto: str, cliente_correo: str, db: Session = Depends(obtener_db)):
+    cliente = db.query(models.Cliente).filter(models.Cliente.correo == cliente_correo.lower().strip()).first()
+    if not cliente:
+        return PlainTextResponse("🔒 ACCESO RESTRINGIDO: Inicia sesión.", status_code=401)
+
+    if "7:00" in hora_texto: hora_solicitada = dt.time(19, 0)
+    elif "7:15" in hora_texto: hora_solicitada = dt.time(19, 15)
+    else: hora_solicitada = dt.time(19, 30)
+
+    fecha_hoy = dt.date.today()
+    personas_reserva = 4
+
+    mesas_candidatas = db.query(models.Mesa).filter(
+        models.Mesa.restaurante_id == restaurante_id,
+        models.Mesa.capacidad_max >= personas_reserva
+    ).all()
+
+    if not mesas_candidatas:
+        return PlainTextResponse("🚫 ERROR: Este restaurante no tiene mesas configuradas.", status_code=400)
+
+    mesa_asignada = None
+
+    for mesa in mesas_candidatas:
+        reservas_existentes = db.query(models.Reserva).filter(
+            models.Reserva.mesa_id == mesa.id,
+            models.Reserva.fecha == fecha_hoy,
+            models.Reserva.status == "Confirmada"
+        ).all()
+
+        colision_detectada = False
+        for res in reservas_existentes:
+            dt_existente = dt.datetime.combine(fecha_hoy, res.hora)
+            dt_solicitado = dt.datetime.combine(fecha_hoy, hora_solicitada)
+            diferencia_minutos = abs((dt_solicitado - dt_existente).total_seconds()) / 60
+
+            if diferencia_minutos < 120:
+                colision_detectada = True
+                break
+
+        if not colision_detectada:
+            mesa_asignada = mesa
+            break
+
+    if not mesa_asignada:
+        return PlainTextResponse(f"🚫 CHOQUE DE HORARIOS: La mesa ya se encuentra ocupada dentro del rango de protección de 2 horas. Intenta otro bloque.", status_code=400)
+
+    nueva_reserva = models.Reserva(
+        restaurante_id=restaurante_id,
+        mesa_id=mesa_asignada.id,
+        cliente_id=cliente.id,
+        fecha=fecha_hoy,
+        hora=hora_solicitada,
+        num_comensales=personas_reserva,
+        status="Confirmada"
+    )
+
+    db.add(nueva_reserva)
+    db.commit()
+
+    return PlainTextResponse(f"¡RESERVACIÓN CONFIRMADA REAL! Mesa {mesa_asignada.numero_mesa} ({mesa_asignada.zona}) asignada con éxito para las {hora_texto} a nombre de {cliente.nombre}.", status_code=200)

@@ -1,165 +1,290 @@
-:root {
-    --bg-principal: #0f172a;
-    --bg-tarjeta: #1e293b;
-    --texto-claro: #f8fafc;
-    --texto-mutado: #94a3b8;
-    --acento-primario: #da3743; /* Rojo OpenTable */
-    --acento-verde: #10b981;
-}
+/* =========================================================================
+   🌌 ARQUITECTURA VISUAL RESPONSIVA: MESA MÉXICO MULTIPANTALLA
+   ========================================================================= */
 
+/* --- 1. CONFIGURACIÓN DE FÁBRICA --- */
 * {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-    background-color: var(--bg-principal);
-    color: var(--texto-claro);
+    background-color: #0f172a;
+    color: #f8fafc;
     min-height: 100vh;
-    padding: 2rem;
 }
 
-.contenedor {
-    max-width: 1000px;
-    margin: 0 auto;
+/* --- 2. BARRA SUPERIOR FLEXIBLE (NAV) --- */
+.nav-principal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #1e293b;
+    border-bottom: 1px solid #334155;
 }
 
-header {
-    text-align: center;
-    margin-bottom: 3rem;
+.nav-derecha, #bloque-autenticacion-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
-header h1 {
-    font-size: 2.5rem;
+/* --- 3. BOTONES EJECUTIVOS --- */
+.btn-nav {
+    background: transparent;
+    border: 1px solid #475569;
+    color: #f8fafc;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
     font-weight: 600;
-    letter-spacing: -1px;
-    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-header h1 span {
-    color: var(--acento-primario);
+.btn-nav-primario {
+    background: #da3743;
+    border-color: #da3743;
 }
 
-header p {
-    color: var(--texto-mutado);
-    font-size: 1.1rem;
+.btn-locales {
+    border: 2px solid #10b981 !important;
+    color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.05) !important;
 }
 
-.seccion-buscador {
-    background-color: var(--bg-tarjeta);
-    padding: 2rem;
-    border-radius: 16px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    margin-bottom: 2.5rem;
+.btn-locales:hover {
+    background: #10b981 !important;
+    color: white !important;
 }
 
-.grid-formulario {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    gap: 1.5rem;
+/* --- 4. SECCIÓN HERO Y BUSCADOR ESTILO OPENTABLE --- */
+.contenedor-principal {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.bloque-hero {
+    text-align: center;
+    margin: 3rem auto;
+}
+
+.bloque-hero h2 {
+    font-size: 2rem;
+    color: #ffffff;
+    margin-bottom: 2rem;
+    font-weight: 700;
+}
+
+/* 📊 LA CAJA DEL BUSCADOR: Limpia en PC, adaptable en móvil */
+.barra-busqueda-caja {
+    background: #1e293b;
+    border: 1px solid #334155;
+    padding: 1.5rem;
+    border-radius: 12px;
+    display: flex;
+    gap: 1.2rem;
     align-items: flex-end;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
 }
 
-@media (max-width: 768px) {
-    .grid-formulario {
-        grid-template-columns: 1fr;
-    }
-}
-
-.grupo-campo {
+.campo-grupo-busqueda {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    flex: 1;
+    text-align: left;
 }
 
-.grupo-campo label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--texto-mutado);
+.campo-grupo-busqueda label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 700;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.grupo-campo input, .grupo-campo select {
-    background-color: var(--bg-principal);
-    border: 2px solid #334155;
-    color: var(--texto-claro);
-    padding: 0.8rem 1rem;
-    border-radius: 8px;
+.campo-grupo-busqueda input, .campo-grupo-busqueda select {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: white;
+    padding: 0.8rem;
+    border-radius: 6px;
     font-size: 1rem;
     outline: none;
-    transition: border-color 0.2s;
+    width: 100%;
 }
 
-.grupo-campo input:focus {
-    border-color: var(--acento-primario);
-}
-
-.btn-buscar {
-    background-color: var(--acento-primario);
-    color: var(--texto-claro);
+.btn-buscar-rojo {
+    background: #da3743;
+    color: white;
     border: none;
-    padding: 0.8rem 1.5rem;
-    border-radius: 8px;
+    padding: 0.8rem 2rem;
+    border-radius: 6px;
+    font-weight: 700;
     font-size: 1rem;
-    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background 0.2s;
+    height: 48px;
 }
 
-.btn-buscar:hover {
-    background-color: #b91c1c;
-}
-
-.lista-resultados {
+/* --- 5. GRID DE RESULTADOS (TARJETAS) --- */
+.grid-resultados {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-}
-
-.tarjeta-restaurante {
-    background-color: var(--bg-tarjeta);
-    border-radius: 12px;
-    padding: 1.5rem;
-    border: 1px solid #334155;
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-}
-
-.tarjeta-restaurante h3 {
-    font-size: 1.3rem;
-    font-weight: 600;
-}
-
-.badge-cocina {
-    align-self: flex-start;
-    background-color: #334155;
-    color: var(--texto-claro);
-    padding: 0.2rem 0.6rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-}
-
-.info-localizacion {
-    font-size: 0.9rem;
-    color: var(--texto-mutado);
-}
-
-.zonas-disponibles {
-    font-size: 0.85rem;
-    color: var(--acento-verde);
-    font-weight: 600;
+    gap: 2rem;
+    margin-top: 3rem;
 }
 
 .alerta-vacia {
     grid-column: 1 / -1;
     text-align: center;
+    color: #94a3b8;
     padding: 3rem;
-    color: var(--texto-mutado);
-    border: 2px dashed #334155;
-    border-radius: 12px;
+    background: #1e293b;
+    border-radius: 8px;
+    border: 1px dashed #334155;
 }
 
+/* 🖼️ AJUSTE DE IMAGEN CORPORATIVA PREMIUM */
+.foto-contenedor {
+    width: 100%;
+    height: 200px; /* 👈 Le da la altura exacta para que deje de ser invisible */
+    background-size: cover;
+    background-position: center;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    position: relative;
+}
+
+.tarjeta-restaurante {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* --- 6. VENTANAS FLOTANTES (MODALES AMBOS ROLES) --- */
+.modal-contenedor {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+}
+
+.modal-tarjeta {
+    background: #1e293b;
+    border: 1px solid #475569;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+}
+
+.campo-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1.2rem;
+}
+
+.campo-grupo label {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.campo-grupo input {
+    background: #0f172a;
+    border: 1px solid #334155;
+    color: white;
+    padding: 0.75rem;
+    border-radius: 6px;
+}
+
+.btn-rojo-bloque {
+    width: 100%;
+    padding: 0.8rem;
+    background: #da3743;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* =========================================================================
+   📱 7. MEDIAS QUERIES: REGLAS ADAPTABLES EXCLUSIVAS PARA CELULARES
+   ========================================================================= */
+@media (max-width: 768px) {
+    .nav-principal {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .nav-derecha {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .bloque-hero h2 {
+        font-size: 1.5rem;
+    }
+
+    /* El buscador se estira verticalmente de forma perfecta en pantallas táctiles */
+    .barra-busqueda-caja {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .campo-grupo-busqueda {
+        max-width: 100% !important;
+    }
+
+    .btn-buscar-rojo {
+        width: 100%;
+    }
+}
+
+/* 🌌 BLINDAJE MULTIMEDIA DEFINITIVO PARA EL PORTAL DE RESERVAS */
+.foto-contenedor {
+    width: 100% !important;
+    height: 200px !important; /* 👈 Abre la caja físicamente a 200 pixeles de alto */
+    background: linear-gradient(135deg, #1e293b, #da3743) !important; /* 👈 Color degradado corporativo real */
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    display: block !important;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+
+/* 🌌 BLINDAJE DE FONDO CORPORATIVO CUANDO LA CARPETA ESTÁ VACÍA */
+.foto-contenedor {
+    width: 100% !important;
+    height: 180px !important; /* Abre la caja físicamente a 180 píxeles */
+    background: linear-gradient(135deg, #1e293b, #da3743) !important; /* Degradado de azul a rojo premium */
+    background-size: cover !important;
+    background-position: center !important;
+    display: block !important;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
 

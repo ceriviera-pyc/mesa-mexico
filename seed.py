@@ -15,28 +15,35 @@ def alimentar_base_datos():
         db.commit()
         print("🧹 Base de datos local limpia y lista.")
 
-        # 🇲🇽 2. Creación de Restaurantes Piloto en México
+        # 🇲🇽 2. Creación de Restaurantes Piloto en México con Datos Corporativos Premium
         restaurante1 = models.Restaurante(
             nombre="Mariscos Riviera", 
             ciudad="Playa del Carmen", 
             estado="Quintana Roo", 
-            tipo_cocina="Mariscos"
+            tipo_cocina="Mariscos",
+            imagen_url="https://unsplash.com",
+            sitio_web="https://google.com"
         )
         restaurante2 = models.Restaurante(
             nombre="El Asador del Centro", 
             ciudad="Ciudad de México", 
             estado="CDMX", 
-            tipo_cocina="Cortes de Carne"
+            tipo_cocina="Cortes de Carne",
+            imagen_url="https://unsplash.com",
+            sitio_web="https://google.com"
         )
         restaurante3 = models.Restaurante(
             nombre="La Cantina de Guadalajara", 
             ciudad="Guadalajara", 
             estado="Jalisco", 
-            tipo_cocina="Mexicana Tradicional"
+            tipo_cocina="Mexicana Tradicional",
+            imagen_url="https://unsplash.com",
+            sitio_web="https://google.com"
         )
 
         db.add_all([restaurante1, restaurante2, restaurante3])
-        db.commit()  # Guardamos los restaurantes para generar sus IDs únicos
+        db.commit()
+        
 
         # 🪑 3. Creación de Mesas por Zonas y Capacidades
         # Mesas para Mariscos Riviera (Playa del Carmen)

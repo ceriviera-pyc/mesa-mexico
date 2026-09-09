@@ -3,48 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mesa México - Reservas en un Clic</title>
-    <link href="https://googleapis.com" rel="stylesheet">
-    <!-- 🎨 Enlazamos tu nuevo archivo CSS externo -->
+    <title>Mesa México - Plataforma Multinegocio de Reservas Nacionales</title>
     <link rel="stylesheet" href="/static/estilos.css">
+    <!-- 🖼️ BLINDAJE MULTIMEDIA DIRECTO DE ALTA INGENIERÍA -->
+    <style>
+        .foto-contenedor {
+            width: 100% !important;
+            height: 200px !important; /* 👈 Obliga a la caja gris a abrirse a 200 pixeles de alto */
+            background-size: cover !important;
+            background-position: center !important;
+            background-repeat: no-repeat !important;
+            display: block !important;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+        .tarjeta-restaurante {
+            background: #1e293b !important;
+            border: 1px solid #334155 !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+    </style>
+
 </head>
 <body>
 
-    <div class="contenedor">
-        <header>
-            <h1>Mesa <span>México</span></h1>
-            <p>Plataforma Multinegocio de Reservas Nacionales</p>
-        </header>
+     <!-- 🌌 NAV BAR SUPERIOR CORPORATIVA REFORZADA Y ORDENADA -->
+    <nav class="nav-principal" style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 2rem; background-color: #1e293b; border-bottom: 1px solid #334155;">
+        
+        <!-- Bloque Izquierdo: Logotipo Corporativo -->
+        <div class="nav-izquierda">
+            <h1 class="logo-texto" style="margin: 0; color: #ffffff; font-size: 1.5rem; cursor: pointer; font-weight: 700;" onclick="window.location.reload()">Mesa México</h1>
+        </div>
+        
+        <!-- Bloque Derecho: Todos los botones unificados y alineados sin encimarse -->
+        <div class="nav-derecha" style="display: flex; align-items: center; gap: 1rem;">
+            <!-- Botón Corporativo de Locales -->
+            <button class="btn-nav btn-locales" onclick="abrirModalEmpresa()">
+                💼 Acceso Locales
+            </button>
+            
+            <!-- Contenedor dinámico para botones de clientes (Iniciar Sesión / Nombre de Usuario) -->
+            <div id="bloque-autenticacion-nav" style="display: flex; align-items: center; gap: 1rem;">
+                <!-- Rellenado dinámicamente por app.js -->
+            </div>
+        </div>
+        
+    </nav>
 
-        <section class="seccion-buscador">
-            <div class="grid-formulario">
-                <div class="grupo-campo">
-                    <label for="input-ciudad">¿A dónde vas, Rafael?</label>
-                    <input type="text" id="input-ciudad" placeholder="Ej. Playa del Carmen, CDMX..." value="Playa del Carmen">
+
+    <!-- 🔍 SECCIÓN PRINCIPAL: BUSCADOR ESTILO OPENTABLE -->
+    <main class="contenedor-principal">
+        <div class="bloque-hero">
+            <h2>Plataforma Multinegocio de Reservas Nacionales</h2>
+            
+            <div class="barra-busqueda-caja">
+                <div class="campo-grupo-busqueda">
+                    <label>UBICACIÓN, RESTAURANTE O COCINA</label>
+                    <input type="text" id="input-ciudad" value="Playa del Carmen" placeholder="Ej. Playa del Carmen, Cancún...">
                 </div>
-                <div class="grupo-campo">
-                    <label for="select-personas">Personas</label>
+                
+                <div class="campo-grupo-busqueda" style="max-width: 180px;">
+                    <label>PERSONAS</label>
                     <select id="select-personas">
+                        <option value="1">1 persona</option>
                         <option value="2">2 personas</option>
+                        <option value="3">3 personas</option>
                         <option value="4" selected>4 personas</option>
+                        <option value="5">5 personas</option>
                         <option value="6">6 personas</option>
-                        <option value="8">8 personas</option>
                     </select>
                 </div>
-                <button class="btn-buscar" onclick="ejecutarBusquedaReal()">Buscar Mesas</button>
+                
+                <button class="btn-buscar-rojo" onclick="ejecutarBusquedaReal()">¡Vamos!</button>
             </div>
-        </section>
+        </div>
 
-        <section class="lista-resultados" id="contenedor-resultados">
-            <div class="alerta-vacia">
-                Ingresa una ciudad de México arriba y haz clic en "Buscar Mesas" para consultar disponibilidad en tiempo real.
+        <!-- 🏢 RECUADRO DINÁMICO DE TARJETAS MULTIMEDIA -->
+        <div id="contenedor-resultados" class="grid-resultados">
+            <div class="alerta-vacia">Ingresa una ciudad de México arriba y haz clic en "¡Vamos!" para consultar disponibilidad en tiempo real.</div>
+        </div>
+    </main>
+
+    <!-- 👤 MODAL INTEGRAL PARA CLIENTES (COMENSALES) -->
+    <div id="modal-sesion" class="modal-contenedor" style="display: none;">
+        <div class="modal-tarjeta">
+            <button class="btn-cerrar-modal" onclick="cerrarModalSesion()">✕</button>
+            <div class="modal-encabezado-tabs">
+                <button id="tab-login" class="tab-link activo" onclick="cambiarPestañaModal('login')">Ingresar</button>
+                <button id="tab-registro" class="tab-link" onclick="cambiarPestañaModal('registro')">Soy Nuevo</button>
             </div>
-        </section>
+
+            <div id="form-login" class="formulario-bloque activo">
+                <div class="campo-grupo"><label>Correo Electrónico</label><input type="email" id="login-correo" placeholder="correo@ejemplo.com"></div>
+                <div class="campo-grupo"><label>Contraseña</label><input type="password" id="login-password" placeholder="••••••••"></div>
+                <button class="btn-rojo-bloque" onclick="ejecutarLoginDiario()">Entrar Seguro</button>
+            </div>
+
+            <div id="form-registro" class="formulario-bloque">
+                <div id="bloque-datos-registro">
+                    <div class="campo-grupo"><label>Nombre Completo</label><input type="text" id="reg-nombre" placeholder="Tu Nombre"></div>
+                    <div class="campo-grupo"><label>Teléfono Celular</label><input type="text" id="reg-telefono" placeholder="9982602714"></div>
+                    <div class="campo-grupo"><label>Correo Electrónico</label><input type="email" id="reg-correo" placeholder="nombre@ejemplo.com"></div>
+                    <div class="campo-grupo"><label>Contraseña</label><input type="password" id="reg-password" placeholder="Mínimo 5 caracteres"></div>
+                    <button class="btn-rojo-bloque" onclick="ejecutarPreRegistro()">Solicitar PIN de Activación</button>
+                </div>
+                <div id="bloque-verificar-pin" style="display: none; flex-direction: column; gap: 1rem;">
+                    <p style="color: #cbd5e1; font-size: 0.9rem; text-align: center;">Introduce los 6 dígitos enviados a tu consola:</p>
+                    <div class="campo-grupo"><label>PIN de Activación</label><input type="text" id="reg-pin" placeholder="123456" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px;"></div>
+                    <button class="btn-rojo-bloque" style="background-color: #10b981;" onclick="ejecutarVerificacionUnica()">Verificar y Activar Cuenta</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 🧠 Enlazamos tu nuevo archivo JavaScript externo -->
-    <script src="/static/app.js"></script>
+    <!-- 💼 MODAL INTEGRAL PARA SOCIOS COMERCIALES (EMPRESAS) -->
+    <div id="modal-empresa" class="modal-contenedor" style="display: none;">
+        <div class="modal-tarjeta">
+            <button class="btn-cerrar-modal" onclick="cerrarModalEmpresa()">✕</button>
+            <div class="modal-encabezado-tabs">
+                <button id="tab-empresa-login" class="tab-link activo" onclick="cambiarTabEmpresa('login')">Ingresar Empresa</button>
+                <button id="tab-empresa-registro" class="tab-link" onclick="cambiarTabEmpresa('registro')">Soy Nuevo Socio</button>
+            </div>
+
+            <div id="form-empresa-login" class="formulario-bloque activo">
+                <div class="campo-grupo"><label>Correo Corporativo</label><input type="email" id="empresa-login-correo" placeholder="ejemplo@restaurante.com"></div>
+                <div class="campo-grupo"><label>Contraseña de Acceso</label><input type="password" id="empresa-login-password" placeholder="••••••••"></div>
+                <button class="btn-rojo-bloque" onclick="ejecutarLoginEmpresa()">Entrar Seguro al Panel</button>
+            </div>
+
+            <div id="form-empresa-registro" class="formulario-bloque">
+                <div class="campo-grupo"><label>Razón Social / Nombre</label><input type="text" id="empresa-reg-nombre" placeholder="Grupo Gastronómico Riviera"></div>
+                <div class="campo-grupo"><label>Teléfono Celular</label><input type="text" id="empresa-reg-telefono" placeholder="9982602714"></div>
+                <div class="campo-grupo"><label>Correo Electrónico</label><input type="email" id="empresa-reg-correo" placeholder="dueño@mariscos.com"></div>
+                <div class="campo-grupo"><label>Asigna Contraseña</label><input type="password" id="empresa-reg-password" placeholder="Mínimo 5 caracteres"></div>
+                <button class="btn-rojo-bloque" onclick="ejecutarRegistroEmpresa()">Crear Cuenta Corporativa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🖼️ MODAL DE CARGA: Alta Real de Restaurante Estilo OpenTable -->
+    <div id="modal-alta-restaurante" class="modal-contenedor" style="display: none;">
+        <div class="modal-tarjeta" style="max-width: 480px;">
+            <button class="btn-cerrar-modal" onclick="cerrarModalAltaRestaurante()">✕</button>
+            <h2 style="color: white; margin-bottom: 1.5rem; text-align: center; font-size: 1.4rem;">🏢 Registrar Nuevo Restaurante</h2>
+            
+            <div class="campo-grupo"><label>Nombre del Restaurante</label><input type="text" id="resto-nombre" placeholder="Piaggia Playa del Carmen"></div>
+            <div class="campo-grupo"><label>Tipo de Cocina</label><input type="text" id="resto-cocina" placeholder="Mariscos / Cortes finos"></div>
+            <div class="campo-grupo"><label>Ciudad</label><input type="text" id="resto-ciudad" placeholder="Playa del Carmen"></div>
+            <div class="campo-grupo"><label>Estado</label><input type="text" id="resto-estado" placeholder="Quintana Roo"></div>
+            <div class="campo-grupo"><label>URL de Imagen Corporativa (Foto Real)</label><input type="text" id="resto-imagen" placeholder="https://unsplash.com..."></div>
+            <div class="campo-grupo"><label>Sitio Web Oficial (Opcional)</label><input type="text" id="resto-web" placeholder="https://mi-restaurante.com"></div>
+            
+            <button class="btn-rojo-bloque" style="background-color: #10b981;" onclick="ejecutarAltaRestauranteReal()">🚀 Subir Local al Sistema Nacional</button>
+        </div>
+    </div>
+
+        <!-- 🚀 ENLACE BLINDADO ANTI-CACHÉ: Forza a Chrome a leer el archivo nuevo de golpe -->
+        <script src="/static/app.js?v=4.0"></script>
 </body>
 </html>
-
-

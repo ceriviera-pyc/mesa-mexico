@@ -31,9 +31,7 @@ def forzar_semillero_en_produccion():
     except Exception as e:
         print(f"El semillero ya estaba aplicado o dio un aviso: {e}")
 
-# 📁 Montar la carpeta static para los archivos CSS y JS (Tu línea 25 anterior)
-app.mount("/static", StaticFiles(directory="static"), name="static")
-# 📂 Montar la carpeta static para los archivos CSS y JS
+# 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 def obtener_db():

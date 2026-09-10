@@ -50,11 +50,7 @@
                 <!-- Rellenado dinámicamente por app.js -->
             </div>
         </div>
-        
-    </nav>
-    <button id="btn-actualizar-ubicacion" class="btn-rojo-bloque" style="margin: 10px 0; padding: 10px; font-weight: bold;">
-        📍 Usar mi ubicación actual
-    </button>
+ 
 
 
     <!-- 🔍 SECCIÓN PRINCIPAL: BUSCADOR ESTILO OPENTABLE -->
@@ -67,7 +63,13 @@
                     <label>UBICACIÓN, RESTAURANTE O COCINA</label>
                     <input type="text" id="input-ciudad" value="Escribe una ciudad..." placeholder="Ej. Playa del Carmen, Cancún...">
                 </div>
-                
+     <!-- 📍 EL BOTÓN AHORA QUEDA AQUÍ ADENTRO INTEGRADO A LA BARRA -->
+                <div class="campo-grupo-busqueda" style="display: flex; align-items: flex-end;">
+                    <button type="button" id="btn-actualizar-ubicacion" class="btn-nav" style="width: 100%; height: 45px; background-color: #d9534f; color: white; border: none; font-weight: bold; border-radius: 4px; cursor: pointer;">
+                        📍 Usar mi ubicación actual
+                    </button>
+                </div>  
+                          
                 <div class="campo-grupo-busqueda" style="max-width: 180px;">
                     <label>PERSONAS</label>
                     <select id="select-personas">

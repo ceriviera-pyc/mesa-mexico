@@ -21,6 +21,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 🚀 TRUCO TEMPORAL PARA FORZAR EL SEMILLERO EN LA NUBE DE RENDER
+@app.on_event("startup")
+def forzar_semillero_en_produccion():
+    import seed
+    print("Ejecutando la limpieza y recreación de la Base de Datos en Render...")
+    try:
+        seed.alimentar_base_datos()
+    except Exception as e:
+        print(f"El semillero ya estaba aplicado o dio un aviso: {e}")
+
+# 📁 Montar la carpeta static para los archivos CSS y JS (Tu línea 25 anterior)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 # 📂 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 

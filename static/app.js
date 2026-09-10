@@ -293,9 +293,8 @@ document.getElementById('btn-actualizar-ubicacion').addEventListener('click', ()
 
             console.log("Coordenadas obtenidas:", coordenadas);
 
-            const urlApi = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? 'http://127.0.0'
-                : 'https://onrender.com';
+            // 📍 RUTA DIRECTA AUTOMÁTICA PARA TU DOMINIO EN RENDER
+            const urlApi = '/api/ubicacion/actualizar';
 
             fetch(urlApi, {
                 method: 'POST',

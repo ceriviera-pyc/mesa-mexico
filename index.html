@@ -58,34 +58,33 @@
         <div class="bloque-hero">
             <h2>Plataforma Multinegocio de Reservas Nacionales</h2>
             
-<!-- Contenedor principal de la barra en una sola línea -->
-<div class="barra-busqueda-caja" style="display: flex; align-items: flex-end; gap: 15px; background-color: #1e2530; padding: 20px; border-radius: 8px;">
-    
-    <div class="campo-grupo-busqueda" style="flex: 2; display: flex; flex-direction: column; text-align: left;">
-        <label style="color: #bbb; font-size: 12px; margin-bottom: 5px; font-weight: bold;">UBICACIÓN, RESTAURANTE O COCINA</label>
-        <input type="text" id="busqueda-input" placeholder="Escribe una ciudad..." style="width: 100%; height: 40px; background-color: #11161d; border: 1px solid #334155; color: white; padding: 0 10px; border-radius: 4px;">
-    </div>
+        <!-- Barra de búsqueda con sus clases CSS nativas limpias -->
+        <div class="barra-busqueda-caja">
+            <div class="campo-grupo-busqueda">
+                <label>UBICACIÓN, RESTAURANTE O COCINA</label>
+                <input type="text" id="busqueda-input" placeholder="Escribe una ciudad...">
+            </div>
 
-    <div class="campo-grupo-busqueda" style="flex: 1; display: flex; flex-direction: column; text-align: left;">
-        <label style="color: #bbb; font-size: 12px; margin-bottom: 5px; font-weight: bold;">PERSONAS</label>
-        <select id="select-personas" style="width: 100%; height: 40px; background-color: #11161d; border: 1px solid #334155; color: white; padding: 0 10px; border-radius: 4px;">
-            <option value="1">1 persona</option>
-            <option value="2">2 personas</option>
-            <option value="3">3 personas</option>
-            <option value="4">4 personas</option>
-        </select>
-    </div>
+            <div class="campo-grupo-busqueda">
+                <label>PERSONAS</label>
+                <select id="select-personas">
+                    <option value="1">1 persona</option>
+                    <option value="2">2 personas</option>
+                    <option value="3">3 personas</option>
+                    <option value="4">4 personas</option>
+                </select>
+            </div>
 
-    <!-- Botón ¡Vamos! alineado horizontalmente -->
-    <button class="btn-rojo-bloque" id="btn-vamos" style="height: 40px; padding: 0 25px; background-color: #e11d48; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">¡Vamos!</button>
-</div>
+            <button class="btn-rojo-bloque" id="btn-vamos">¡Vamos!</button>
+        </div>
 
-<!-- 📍 Botón de ubicación centrado, limpio y estilizado abajo -->
-<div style="text-align: center; margin-top: 15px;">
-    <button type="button" id="btn-actualizar-ubicacion" style="background: none; border: 1px solid #475569; color: #94a3b8; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.3s ease;">
-        📍 Usar mi ubicación actual
-    </button>
-</div>
+        <!-- 📍 El botón de ubicación separado abajo usando margen estándar, sin romper el flex -->
+        <div style="clear: both; text-align: center; padding-top: 20px;">
+            <button type="button" id="btn-actualizar-ubicacion" style="background: #1e2530; border: 1px solid #475569; color: #94a3b8; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold;">
+                📍 Usar mi ubicación actual
+            </button>
+        </div>
+
        
         <!-- 🏢 RECUADRO DINÁMICO DE TARJETAS MULTIMEDIA -->
         <div id="contenedor-resultados" class="grid-resultados">

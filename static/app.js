@@ -269,38 +269,74 @@ async function ejecutarBusquedaReal() {
     }
 }
 
-// Listener para tu botón de actualizar ubicación
+
+// -------------------------------------------------------------
+// Bloque de geolocalización corregido para static/app.js
+// -------------------------------------------------------------
 document.getElementById('btn-actualizar-ubicacion').addEventListener('click', () => {
     if (!navigator.geolocation) {
-        alert("Tu navegador no soporta geolocalización.");
+        alert("Tu navegador no soporta la geolocalización.");
         return;
     }
 
+    const btn = document.getElementById('btn-actualizar-ubicacion');
+    const textoOriginal = btn.innerText;
+    btn.innerText = "Buscando satélites...";
+    btn.disabled = true;
+
     navigator.geolocation.getCurrentPosition(
         (position) => {
-            const datosUbicacion = {
+            const coordenadas = {
                 latitud: position.coords.latitude,
                 longitud: position.coords.longitude
             };
 
-            // Detecta si estás en Localhost o en la nube de Render de forma automática
+            console.log("Coordenadas obtenidas:", coordenadas);
+
             const urlApi = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
                 ? 'http://127.0.0'
-                : '/api/ubicacion'; // Ruta relativa automática para producción en Render
+                : '/api/ubicacion/actualizar';
 
             fetch(urlApi, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datosUbicacion)
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(coordenadas)
             })
-            .then(res => res.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Error en la respuesta del servidor");
+                }
+                return response.json();
+            })
             .then(data => {
-                alert("¡Ubicación actualizada correctamente en el sistema!");
-                console.log("Servidor respondió:", data);
+                alert("¡Ubicación actualizada con éxito en la base de datos!");
+                console.log("Respuesta de FastAPI:", data);
+                btn.innerText = textoOriginal;
+                btn.disabled = false;
             })
-            .catch(err => console.error("Error al sincronizar con FastAPI:", err));
+            .catch(err => {
+                console.error("Error al sincronizar coordenadas:", err);
+                alert("Se obtuvo la ubicación local, pero falló al sincronizar con el servidor.");
+                btn.innerText = textoOriginal;
+                btn.disabled = false;
+            });
         },
-        (error) => alert("Error al obtener la ubicación: " + error.message),
-        { enableHighAccuracy: true, timeout: 5000 }
+        (error) => {
+            console.error("Error de GPS:", error);
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
+            if (error.code === error.PERMISSION_DENIED) {
+                alert("Por favor, permite el acceso a la ubicación en tu navegador.");
+            } else {
+                alert("No se pudo obtener tu ubicación: " + error.message);
+            }
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 7000,
+            maximumAge: 0
+        }
     );
 });

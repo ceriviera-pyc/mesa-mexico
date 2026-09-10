@@ -56,7 +56,7 @@
         <div class="bloque-hero">
             <h2>Plataforma Multinegocio de Reservas Nacionales</h2>
             
-            <!-- Barra de búsqueda horizontal reparada y alineada con CSS nativo -->
+            <!-- Barra de búsqueda horizontal nativa con el botón ¡Vamos! en su tamaño original -->
             <div class="barra-busqueda-caja">
                 <div class="campo-grupo-busqueda">
                     <label>UBICACIÓN, RESTAURANTE O COCINA</label>
@@ -73,7 +73,8 @@
                     </select>
                 </div>
 
-                <button class="btn-rojo-bloque" id="btn-vamos">¡Vamos!</button>
+                <!-- Modificado con estilo inline para amarrar un ancho fijo y compacto -->
+                <button class="btn-rojo-bloque" id="btn-vamos" style="width: auto !important; min-width: 140px; margin: 0; align-self: flex-end;">¡Vamos!</button>
             </div>
 
             <!-- 📍 El botón de ubicación separado abajo centrado sutilmente -->
@@ -82,7 +83,13 @@
                     📍 Usar mi ubicación actual
                 </button>
             </div>
-        </div> <!-- 👈 Cierre correcto del bloque-hero para evitar descuadres en cascada -->
+        </div> 
+
+        <!-- 🏢 RECUADRO DINÁMICO DE TARJETAS MULTIMEDIA -->
+        <div id="contenedor-resultados" class="grid-resultados">
+            <div class="alerta-vacia">Ingresa una ciudad de México arriba y haz clic en "¡Vamos!" para consultar disponibilidad en tiempo real.</div>
+        </div>
+    </main>
 
         <!-- 🏢 RECUADRO DINÁMICO DE TARJETAS MULTIMEDIA -->
         <div id="contenedor-resultados" class="grid-resultados">

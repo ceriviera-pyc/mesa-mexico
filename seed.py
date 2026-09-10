@@ -1,8 +1,10 @@
 import models
 from database import SessionLocal, engine
 
-# Aseguramos que las tablas estén creadas antes de meter datos
+# Aseguramos que las tablas se borren y se vuelvan a crear con las nuevas columnas
+models.Base.metadata.drop_all(bind=engine)   # 👈 AGREGA ESTA LÍNEA AQUÍ
 models.Base.metadata.create_all(bind=engine)
+
 
 def alimentar_base_datos():
     db = SessionLocal()

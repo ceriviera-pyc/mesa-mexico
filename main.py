@@ -3,8 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.orm import Session
+from database import obtener_db
 import database, models, schemas
 import datetime as dt
+import models
+import schemas
+
 
 app = FastAPI(title="Mesa México - API SaaS")
 
@@ -214,3 +218,29 @@ def crear_reserva_rapida_horario(restaurante_id: int, hora_texto: str, cliente_c
     db.commit()
 
     return PlainTextResponse(f"¡RESERVACIÓN CONFIRMADA REAL! Mesa {mesa_asignada.numero_mesa} ({mesa_asignada.zona}) asignada con éxito para las {hora_texto} a nombre de {cliente.nombre}.", status_code=200)
+
+
+# -------------------------------------------------------------
+# Pégalo al final de main.py
+# -------------------------------------------------------------
+@app.post("/api/ubicacion/actualizar")
+def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Depends(obtener_db)):
+    # Localmente buscamos al cliente ID 1 (Rafael) para hacer la prueba
+    cliente = db.query(models.Cliente).filter(models.Cliente.id == 1).first()
+
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    cliente.latitud = datos.latitud
+    cliente.longitud = datos.longitud
+
+    db.commit()
+    db.refresh(cliente)
+
+    return {
+        "status": "success",
+        "message": f"Ubicación de {cliente.nombre} actualizada",
+        "coordenadas": {"lat": cliente.latitud, "lng": cliente.longitud}
+    }
+
+

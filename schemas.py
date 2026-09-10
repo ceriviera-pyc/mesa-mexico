@@ -48,3 +48,23 @@ class ReservaCreate(BaseModel):
 # 🔄 6. Estructura para actualizar el estado de una reservación
 class ReservaStatusUpdate(BaseModel):
     status: str  # "Confirmada", "Asistió", "Cancelada"
+
+
+# 7. Estructura Ubicacion Actual para la búsqueda de restaurantes cercanos (latitud y longitud)
+class UbicacionSchema(BaseModel):
+    latitud: float
+    longitud: float
+
+
+from pydantic import BaseModel
+from typing import Optional
+
+# 🗺️ Esquema para validar la geolocalización que viene del botón en app.js
+class UbicacionUpdateSchema(BaseModel):
+    latitud: float
+    longitud: float
+
+    class Config:
+        from_attributes = True
+        
+    

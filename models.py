@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Time, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Time, Boolean, DateTime, Float  # 👈 Se agregó Float aquí
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -19,10 +19,13 @@ class Cliente(Base):
     codigo_verificacion = Column(String, nullable=True)
     codigo_expiracion = Column(DateTime, nullable=True)
 
+    # 🗺️ Coordenadas del Comensal (Ubicación en tiempo real)
+    latitud = Column(Float, nullable=True)
+    longitud = Column(Float, nullable=True)
+
     # Relaciones
     reservas = relationship("Reserva", back_populates="cliente")
     restaurantes_propios = relationship("Restaurante", back_populates="dueno")
-
 
 class Restaurante(Base):
     __tablename__ = "restaurantes"
@@ -40,6 +43,10 @@ class Restaurante(Base):
 
     # 🔗 ENLACE EMPRESARIAL: ID de la empresa/dueño que administra el local
     dueno_id = Column(Integer, ForeignKey("clientes.id"), nullable=True)
+
+    # 🗺️ Coordenadas Físicas del Establecimiento (AGREGA ESTAS DOS LÍNEAS AQUÍ)
+    latitud = Column(Float, nullable=True)
+    longitud = Column(Float, nullable=True)
 
     # Relaciones
     dueno = relationship("Cliente", back_populates="restaurantes_propios")

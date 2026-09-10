@@ -268,3 +268,39 @@ async function ejecutarBusquedaReal() {
         contenedor.innerHTML = '<div class="alerta-vacia">❌ Error de conexión al buscar en la base de datos.</div>'; 
     }
 }
+
+// Listener para tu botón de actualizar ubicación
+document.getElementById('btn-actualizar-ubicacion').addEventListener('click', () => {
+    if (!navigator.geolocation) {
+        alert("Tu navegador no soporta geolocalización.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const datosUbicacion = {
+                latitud: position.coords.latitude,
+                longitud: position.coords.longitude
+            };
+
+            // Detecta si estás en Localhost o en la nube de Render de forma automática
+            const urlApi = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://127.0.0'
+                : '/api/ubicacion'; // Ruta relativa automática para producción en Render
+
+            fetch(urlApi, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datosUbicacion)
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert("¡Ubicación actualizada correctamente en el sistema!");
+                console.log("Servidor respondió:", data);
+            })
+            .catch(err => console.error("Error al sincronizar con FastAPI:", err));
+        },
+        (error) => alert("Error al obtener la ubicación: " + error.message),
+        { enableHighAccuracy: true, timeout: 5000 }
+    );
+});

@@ -63,13 +63,9 @@
                     <label>UBICACIÓN, RESTAURANTE O COCINA</label>
                     <input type="text" id="input-ciudad" value="Escribe una ciudad..." placeholder="Ej. Playa del Carmen, Cancún...">
                 </div>
-     <!-- 📍 EL BOTÓN AHORA QUEDA AQUÍ ADENTRO INTEGRADO A LA BARRA -->
-                <div class="campo-grupo-busqueda" style="display: flex; align-items: flex-end;">
-                    <button type="button" id="btn-actualizar-ubicacion" class="btn-nav" style="width: 100%; height: 45px; background-color: #d9534f; color: white; border: none; font-weight: bold; border-radius: 4px; cursor: pointer;">
-                        📍 Usar mi ubicación actual
-                    </button>
+     
                 </div>  
-                          
+
                 <div class="campo-grupo-busqueda" style="max-width: 180px;">
                     <label>PERSONAS</label>
                     <select id="select-personas">
@@ -84,7 +80,14 @@
                 <button class="btn-buscar-rojo" onclick="ejecutarBusquedaReal()">¡Vamos!</button>
             </div>
         </div>
- 
+
+            <!-- 📍 EL BOTÓN CORREGIDO QUEDA AQUÍ ABAJO, CENTRADO Y DISCRETO -->
+            <div style="text-align: center; margin-top: 15px;">
+                <button type="button" id="btn-actualizar-ubicacion" style="background: none; border: 1px solid #555; color: #bbb; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.3s ease;">
+                    📍 Usar mi ubicación actual
+                </button>
+            </div>
+             
         <!-- 🏢 RECUADRO DINÁMICO DE TARJETAS MULTIMEDIA -->
         <div id="contenedor-resultados" class="grid-resultados">
             <div class="alerta-vacia">Ingresa una ciudad de México arriba y haz clic en "¡Vamos!" para consultar disponibilidad en tiempo real.</div>

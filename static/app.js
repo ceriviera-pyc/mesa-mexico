@@ -266,7 +266,7 @@ async function ejecutarVerificacionUnica() {
         const response = await fetch('/api/clientes/verificar-pin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ correo: correo, pin: pin })
+            body: JSON.stringify({ correo: correo, codigo: pin })
         });
 
         const resultado = await response.json();

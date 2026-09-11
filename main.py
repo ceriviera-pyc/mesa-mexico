@@ -38,12 +38,35 @@ def forzar_semillero_en_produccion():
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# 📍 ENDPOINT PARA RECIBIR Y GUARDAR LA UBICACIÓN DEL GPS
+@app.post("/api/ubicacion/actualizar")
+def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Depends(obtener_db)):
+    # Localmente buscamos al cliente ID 1 para hacer la prueba de guardado
+    cliente = db.query(models.Cliente).filter(models.Cliente.id == 1).first()
+    
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    cliente.latitud = datos.latitud
+    cliente.longitud = datos.longitud
+    
+    db.commit()
+    db.refresh(cliente)
+    
+    return {
+        "status": "success",
+        "message": f"Ubicación de {cliente.nombre} actualizada con éxito",
+        "coordenadas": {"lat": cliente.latitud, "lng": cliente.longitud}
+    }
+
+# Tu función que ya tenías abajo (Línea 41 en tu pantalla)
 def obtener_db():
     db = database.SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 # 🏠 VISTA PRINCIPAL: Cargar la pantalla web
 @app.get("/")

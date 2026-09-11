@@ -100,6 +100,27 @@ def login_diario_cliente(credenciales: schemas.ClienteLogin, db: Session = Depen
         }
     }
 
+# 📍 ENDPOINT DE GEOLOCALIZACIÓN INTEGRADO (CORREGIDO PARA EL PRIMER USUARIO)
+@app.post("/api/ubicacion/actualizar")
+def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Depends(obtener_db)):
+    # Buscamos al primer cliente disponible de forma elástica para la prueba en la nube
+    cliente = db.query(models.Cliente).first()
+    
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado en la base de datos.")
+    
+    cliente.latitud = datos.latitud
+    cliente.longitud = datos.longitud
+    
+    db.commit()
+    db.refresh(cliente)
+    
+    return {
+        "status": "success",
+        "message": f"Ubicación de {cliente.nombre} actualizada con éxito en la nube",
+        "coordenadas": {"lat": cliente.latitud, "lng": cliente.longitud}
+    }
+
 
 #  Tu función que ya tenías abajo (Línea 41 en tu pantalla)
 def obtener_db():

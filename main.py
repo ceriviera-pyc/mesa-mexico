@@ -28,6 +28,21 @@ app.add_middleware(
 
 # 🚀 Inicialización segura de tablas en la base de datos SQLite
 models.Base.metadata.create_all(bind=database.engine)
+import os
+
+# 💥 ENDPOINT DE EMERGENCIA PARA ELIMINAR LA BASE DE DATOS VIEJA EN RENDER
+@app.get("/api/admin/limpiar-db-nube")
+def limpiar_db_nube():
+    ruta_db = "mesa_mexico.db"
+    if os.path.exists(ruta_db):
+        try:
+            os.remove(ruta_db)
+            # Recreamos de inmediato las tablas con las columnas correctas en la nube
+            models.Base.metadata.create_all(bind=database.engine)
+            return {"status": "success", "message": "¡Base de datos vieja borrada y recreada con éxito en la nube!"}
+        except Exception as e:
+            return {"status": "error", "message": f"No se pudo borrar: {e}"}
+    return {"status": "error", "message": "No se encontró el archivo de la base de datos."}
 
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")

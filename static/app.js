@@ -333,9 +333,9 @@ document.getElementById('btn-actualizar-ubicacion').addEventListener('click', ()
             }
         },
         {
-            enableHighAccuracy: true,
-            timeout: 7000,
-            maximumAge: 0
+            enableHighAccuracy: false,
+            timeout: 15000,
+            maximumAge: 60000
         }
     );
 });

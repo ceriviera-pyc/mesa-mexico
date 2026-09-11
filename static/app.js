@@ -171,33 +171,47 @@ function cambiarPestañaModal(pestaña) {
 }
 
 async function ejecutarLoginDiario() {
-    const correo = document.getElementById('login-correo').value.trim(); 
+    const correo = document.getElementById('login-correo').value.trim();
     const password = document.getElementById('login-password').value;
+
+    if (!correo || !password) {
+        alert("Por favor, completa todos los campos.");
+        return;
+    }
+
     try {
-        const respuesta = await fetch('/clientes/login', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ correo, password }) 
+        // 📍 Ruta corregida con /api/ para que conecte con FastAPI en Render y Local
+        const response = await fetch('/api/clientes/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ correo: correo, password: password })
         });
-        const resultado = await respuesta.json();
-        if (respuesta.status === 200 && resultado.status === "success") {
-            try { 
-                localStorage.setItem("usuario_nombre", resultado.cliente.nombre); 
-                localStorage.setItem("usuario_correo", resultado.cliente.correo); 
-            } catch(e) {}
-            sesionMemoriaRam.nombre = resultado.cliente.nombre; 
-            sesionMemoriaRam.correo = resultado.cliente.correo;
-            cerrarModalSesion(); 
-            actualizarInterfazUsuarioNav(); 
-            alert(resultado.mensaje); 
-            ejecutarBusquedaReal();
-        } else { 
-            alert(resultado.detail || "🚫 Credenciales incorrectas."); 
+
+        const resultado = await response.json();
+
+        if (response.status === 200 && resultado.status === "success") {
+            // Guardamos los datos de sesión en el navegador del comensal
+            localStorage.setItem("usuario_nombre", resultado.cliente.nombre);
+            localStorage.setItem("usuario_correo", resultado.cliente.correo);
+            localStorage.setItem("usuario_id", resultado.cliente.id); // 👈 Guardamos el ID real para el GPS
+
+            cerrarModalSesion();
+            actualizarInterfazUsuarioNav();
+            alert(resultado.mensaje || "¡Inicio de sesión exitoso!");
+            
+            // Recargamos la ubicación para que ahora sí encuentre tu ID real en la base de datos
+            window.location.reload();
+        } else {
+            alert(resultado.detail || "Correo o contraseña incorrectos.");
         }
-    } catch (error) { 
-        alert("❌ Error."); 
+    } catch (e) {
+        console.error("Error en la autenticación:", e);
+        alert("Hubo un problema de conexión con el servidor de Mesa México.");
     }
 }
+
 
 function ejecutarLogout() { 
     localStorage.clear(); 

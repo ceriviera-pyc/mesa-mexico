@@ -64,7 +64,7 @@ def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obt
 @app.post("/api/clientes/verificar-pin")
 def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depends(obtener_db)):
     cliente = db.query(models.Cliente).filter(
-        models.Cliente.correo == datos.correo,
+        models.Cliente.correo == datos.correo.lower().strip(),
         models.Cliente.codigo_verificacion == datos.codigo
     ).first()
     

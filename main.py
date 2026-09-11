@@ -33,6 +33,23 @@ models.Base.metadata.create_all(bind=database.engine)
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+import os
+
+# 💥 ENDPOINT DE EMERGENCIA PARA BORRAR LA BASE DE DATOS VIEJA EN RENDER
+@app.get("/api/admin/limpiar-db-nube")
+def limpiar_db_nube():
+    ruta_db = "mesa_mexico.db"
+    if os.path.exists(ruta_db):
+        try:
+            os.remove(ruta_db)
+            # Recreamos de inmediato las tablas con las columnas correctas
+            models.Base.metadata.create_all(bind=database.engine)
+            return {"status": "success", "message": "¡Base de datos vieja borrada y recreada con éxito en la nube!"}
+        except Exception as e:
+            return {"status": "error", "message": f"No se pudo borrar: {e}"}
+    return {"status": "error", "message": "No se encontró el archivo de la base de datos."}
+
+
 # 📍 ENDPOINT PARA RECIBIR Y GUARDAR LA UBICACIÓN DEL GPS
 @app.post("/api/ubicacion/actualizar")
 def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Depends(obtener_db)):

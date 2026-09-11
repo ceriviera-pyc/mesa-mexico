@@ -1,7 +1,8 @@
-// 🧠 VARIABLE GLOBAL DE RESPALDO PARA NAVEGACIÓN INPRIVATE / INCÓGNITO
+// 🧠 VARIABLE GLOBAL DE RESPALDO PARA NAVEGACIÓN INPRIVATE / INCÓGNITO (SINCRONIZADA)
 let sesionMemoriaRam = {
     nombre: localStorage.getItem("usuario_nombre") || null,
-    correo: localStorage.getItem("usuario_correo") || null
+    correo: localStorage.getItem("usuario_correo") || null,
+    id: localStorage.getItem("usuario_id") || null
 };
 let empresaActivaId = null; // Guardará el ID de la empresa al iniciar sesión
 
@@ -42,7 +43,7 @@ function cambiarTabEmpresa(pestaña) {
     }
 }
 
-// 🏢 1. DISPARAR REGISTRO ASÍNCRONO DE SOCIO COMERCIAL
+// 🏢 1. DISPARAR REGISTRO ASÍNCRONO DE SOCIO COMERCIAL (CON PREFIJO /API)
 async function ejecutarRegistroEmpresa() {
     const nombre = document.getElementById('empresa-reg-nombre').value.trim();
     const telefono = document.getElementById('empresa-reg-telefono').value.trim();
@@ -55,7 +56,7 @@ async function ejecutarRegistroEmpresa() {
     }
 
     try {
-        const respuesta = await fetch('/empresa/registrar', {
+        const respuesta = await fetch('/api/empresa/registrar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre, telefono, correo, password })
@@ -74,13 +75,14 @@ async function ejecutarRegistroEmpresa() {
     }
 }
 
-// 🔑 2. DISPARAR INICIO DE SESIÓN CORPORATIVO
+
+// 🔑 2. DISPARAR INICIO DE SESIÓN CORPORATIVO (CON PREFIJO /API)
 async function ejecutarLoginEmpresa() {
     const correo = document.getElementById('empresa-login-correo').value.trim();
     const password = document.getElementById('empresa-login-password').value;
 
     try {
-        const respuesta = await fetch('/clientes/login', {
+        const respuesta = await fetch('/api/clientes/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ correo, password })
@@ -100,7 +102,7 @@ async function ejecutarLoginEmpresa() {
     }
 }
 
-// 🚀 3. SUBIDA REAL DE RESTAURANTE CON IMÁGENES A LA BASE DE DATOS
+// 🚀 3. SUBIDA REAL DE RESTAURANTE CON IMÁGENES A LA BASE DE DATOS (CON PREFIJO /API)
 async function ejecutarAltaRestauranteReal() {
     const nombre = document.getElementById('resto-nombre').value.trim();
     const cocina = document.getElementById('resto-cocina').value.trim();
@@ -115,7 +117,7 @@ async function ejecutarAltaRestauranteReal() {
     }
 
     try {
-        const respuesta = await fetch(`/restaurantes/crear?empresa_id=${empresaActivaId}`, {
+        const respuesta = await fetch(`/api/restaurantes/crear?empresa_id=${empresaActivaId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -170,6 +172,7 @@ function cambiarPestañaModal(pestaña) {
     }
 }
 
+// 🔑 3. DISPARAR INICIO DE SESIÓN DE CLIENTE (CON PREFIJO /API)
 async function ejecutarLoginDiario() {
     const correo = document.getElementById('login-correo').value.trim();
     const password = document.getElementById('login-password').value;
@@ -180,28 +183,26 @@ async function ejecutarLoginDiario() {
     }
 
     try {
-        // 📍 Ruta corregida con /api/ para que conecte con FastAPI en Render y Local
         const response = await fetch('/api/clientes/login', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ correo: correo, password: password })
         });
 
         const resultado = await response.json();
 
         if (response.status === 200 && resultado.status === "success") {
-            // Guardamos los datos de sesión en el navegador del comensal
             localStorage.setItem("usuario_nombre", resultado.cliente.nombre);
             localStorage.setItem("usuario_correo", resultado.cliente.correo);
-            localStorage.setItem("usuario_id", resultado.cliente.id); // 👈 Guardamos el ID real para el GPS
+            localStorage.setItem("usuario_id", resultado.cliente.id);
+
+            sesionMemoriaRam.nombre = resultado.cliente.nombre;
+            sesionMemoriaRam.correo = resultado.cliente.correo;
+            sesionMemoriaRam.id = resultado.cliente.id;
 
             cerrarModalSesion();
             actualizarInterfazUsuarioNav();
             alert(resultado.mensaje || "¡Inicio de sesión exitoso!");
-            
-            // Recargamos la ubicación para que ahora sí encuentre tu ID real en la base de datos
             window.location.reload();
         } else {
             alert(resultado.detail || "Correo o contraseña incorrectos.");
@@ -212,11 +213,84 @@ async function ejecutarLoginDiario() {
     }
 }
 
+// 👤 4. DISPARAR SOLICITUD DE PIN DE PRE-REGISTRO (CON PREFIJO /API)
+async function ejecutarPreRegistro() {
+    const nombre = document.getElementById('reg-nombre').value.trim();
+    const telefono = document.getElementById('reg-telefono').value.trim();
+    const correo = document.getElementById('reg-correo').value.trim();
+    const password = document.getElementById('reg-password').value;
+
+    if (!nombre || !telefono || !correo || !password) {
+        alert("Todos los campos son obligatorios para el registro.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/clientes/pre-registro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                nombre: nombre, 
+                telefono: telefono, 
+                correo: correo, 
+                password: password 
+            })
+        });
+
+        const resultado = await response.json();
+
+        if (response.status === 200) {
+            alert("¡Código de activación generado! Introduce el PIN impreso en la terminal de tu VS Code.");
+            document.getElementById('bloque-datos-registro').style.display = 'none';
+            document.getElementById('bloque-verificar-pin').style.display = 'flex';
+        } else {
+            alert(resultado.detail || "No se pudo procesar el pre-registro.");
+        }
+    } catch (e) {
+        console.error("Error en pre-registro:", e);
+        alert("Fallo de conexión con el backend.");
+    }
+}
+
+// 🔐 5. DISPARAR ACTIVACIÓN REAL CON EL PIN DE 6 DÍGITOS (CON PREFIJO /API)
+async function ejecutarVerificacionUnica() {
+    const correo = document.getElementById('reg-correo').value.trim();
+    const pin = document.getElementById('reg-pin').value.trim();
+
+    if (!pin) {
+        alert("Por favor, introduce el PIN de activación.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/clientes/verificar-pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ correo: correo, pin: pin })
+        });
+
+        const resultado = await response.json();
+
+        if (response.status === 200 && resultado.status === "success") {
+            alert("¡Cuenta verificada y activada con éxito!");
+            cambiarPestañaModal('login');
+            document.getElementById('login-correo').value = correo;
+            document.getElementById('bloque-datos-registro').style.display = 'flex';
+            document.getElementById('bloque-verificar-pin').style.display = 'none';
+        } else {
+            alert(resultado.detail || "El PIN introducido es incorrecto o ya expiró.");
+        }
+    } catch (e) {
+        console.error("Error al verificar PIN:", e);
+        alert("Error de conexión al activar tu cuenta.");
+    }
+}
 
 function ejecutarLogout() { 
     localStorage.clear(); 
     sesionMemoriaRam.nombre = null; 
     sesionMemoriaRam.correo = null; 
+    sesionMemoriaRam.id = null;
     actualizarInterfazUsuarioNav(); 
     document.getElementById('contenedor-resultados').innerHTML = '<div class="alerta-vacia">Inicia sesión para consultar las mesas libres.</div>';
     alert("Sesión cerrada."); 
@@ -232,15 +306,15 @@ function actualizarInterfazUsuarioNav() {
     }
 }
 
-// 🏢 MOTOR DE BÚSQUEDA REDISEÑADO ESTILO OPENTABLE (UNIFICADO Y REFORZADO)
+// 🏢 MOTOR DE BÚSQUEDA REDISEÑADO ESTILO OPENTABLE
 async function ejecutarBusquedaReal() {
-    const ciudad = document.getElementById('input-ciudad').value.trim(); 
+    const ciudad = document.getElementById('busqueda-input').value.trim(); 
     const personas = document.getElementById('select-personas').value; 
     const contenedor = document.getElementById('contenedor-resultados');
     if (!ciudad) return;
     contenedor.innerHTML = '<div class="alerta-vacia">Buscando mesas libres...</div>';
     try {
-        const respuesta = await fetch(`/buscar?ciudad=${encodeURIComponent(ciudad)}&personas=${personas}`); 
+        const respuesta = await fetch(`/api/buscar?ciudad=${encodeURIComponent(ciudad)}&personas=${personas}`); 
         const resultado = await respuesta.json(); 
         contenedor.innerHTML = '';
         const listaRestaurantes = resultado.restaurantes_disponibles || [];
@@ -249,13 +323,11 @@ async function ejecutarBusquedaReal() {
                 const tarjeta = document.createElement('div'); 
                 tarjeta.className = 'tarjeta-restaurante';
                 
-                // Mapeo elástico de variables para evitar choques con el backend
                 const nombreLocal = resto.nombre || "Restaurante Corporativo";
                 const cocinaLocal = resto.tipo_cocina || "Especialidad";
                 const ciudadLocal = resto.ciudad || ciudad;
                 const idLocal = resto.id || 1;
 
-                // 📂 ASIGNACIÓN LOCAL DIRECTA METIDA EN EL CICLO DE FORMA PERFECTA
                 let fotoFinal = "/static/imagenes/defecto.jpg";
                 if (nombreLocal.toLowerCase().includes('piaggia')) {
                     fotoFinal = "/static/imagenes/piaggia.jpg";
@@ -283,9 +355,11 @@ async function ejecutarBusquedaReal() {
     }
 }
 
+// Vinculamos el clic del botón ¡Vamos! al motor de búsqueda
+document.getElementById('btn-vamos').addEventListener('click', ejecutarBusquedaReal);
 
 // -------------------------------------------------------------
-// Bloque de geolocalización corregido para static/app.js
+// Bloque de geolocalización elástico para static/app.js
 // -------------------------------------------------------------
 document.getElementById('btn-actualizar-ubicacion').addEventListener('click', () => {
     if (!navigator.geolocation) {
@@ -306,15 +380,11 @@ document.getElementById('btn-actualizar-ubicacion').addEventListener('click', ()
             };
 
             console.log("Coordenadas obtenidas:", coordenadas);
-
-            // 📍 RUTA DIRECTA AUTOMÁTICA PARA TU DOMINIO EN RENDER
             const urlApi = '/api/ubicacion/actualizar';
 
             fetch(urlApi, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(coordenadas)
             })
             .then(response => {
@@ -353,3 +423,4 @@ document.getElementById('btn-actualizar-ubicacion').addEventListener('click', ()
         }
     );
 });
+

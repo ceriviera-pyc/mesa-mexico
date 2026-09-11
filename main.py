@@ -47,20 +47,6 @@ def limpiar_db_nube():
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# 💥 ENDPOINT DE EMERGENCIA PARA RESETEAR LA BASE DE DATOS EN RENDER
-@app.get("/api/admin/limpiar-db-nube")
-def limpiar_db_nube(db: Session = Depends(obtener_db)):
-    ruta_db = "mesa_mexico.db"
-    try:
-        if os.path.exists(ruta_db):
-            # Cerramos conexiones activas antes de remover el archivo físico
-            db.close()
-            os.remove(ruta_db)
-        models.Base.metadata.create_all(bind=database.engine)
-        return {"status": "success", "message": "¡Base de datos vieja eliminada y recreada con éxito!"}
-    except Exception as e:
-        return {"status": "error", "message": f"Error al limpiar base de datos: {e}"}
-
 # 📍 ENDPOINT PARA RECIBIR Y GUARDAR LA UBICACIÓN DEL GPS
 @app.post("/api/ubicacion/actualizar")
 def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Depends(obtener_db)):

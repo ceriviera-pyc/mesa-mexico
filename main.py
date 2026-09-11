@@ -52,8 +52,8 @@ def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obt
         telefono=datos.telefono,
         correo=datos.correo,
         password=datos.password,
-        pin_activacion=pin_generado,
-        activo=False
+        codigo_verificacion=pin_generado,  
+        verificado=False       
     )
     db.add(nuevo_cliente)
     db.commit()
@@ -71,8 +71,8 @@ def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depend
     if not cliente:
         raise HTTPException(status_code=400, detail="El PIN introducido es incorrecto.")
     
-    cliente.activo = True
-    cliente.pin_activacion = None  # Limpiamos el PIN usado
+    cliente.verificado = True           # 👈 Corregido con tu columna real
+    cliente.codigo_verificacion = None  # Limpiamos el PIN usado    
     db.commit()
     
     return {"status": "success", "mensaje": "Cuenta activada con éxito"}

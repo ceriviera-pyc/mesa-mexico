@@ -27,7 +27,6 @@ app.add_middleware(
 )
 
 # 🚀 Esto obligará a Render a limpiar el disco duro virtual y meter la columna 'verificado'
-models.Base.metadata.drop_all(bind=database.engine)
 models.Base.metadata.create_all(bind=database.engine)
 
 

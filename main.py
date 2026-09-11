@@ -30,52 +30,23 @@ app.add_middleware(
 models.Base.metadata.create_all(bind=database.engine)
 import os
 
-# 💥 ENDPOINT DE EMERGENCIA PARA ELIMINAR LA BASE DE DATOS VIEJA EN RENDER
-@app.get("/api/admin/limpiar-db-nube")
-def limpiar_db_nube():
-    ruta_db = "mesa_mexico.db"
-    if os.path.exists(ruta_db):
-        try:
-            os.remove(ruta_db)
-            # Recreamos de inmediato las tablas con las columnas correctas en la nube
-            models.Base.metadata.create_all(bind=database.engine)
-            return {"status": "success", "message": "¡Base de datos vieja borrada y recreada con éxito en la nube!"}
-        except Exception as e:
-            return {"status": "error", "message": f"No se pudo borrar: {e}"}
-    return {"status": "error", "message": "No se encontró el archivo de la base de datos."}
-
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# 📍 ENDPOINT PARA RECIBIR Y GUARDAR LA UBICACIÓN DEL GPS
-@app.post("/api/ubicacion/actualizar")
-def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Depends(obtener_db)):
-    cliente = db.query(models.Cliente).filter(models.Cliente.id == 1).first()
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    
-    cliente.latitud = datos.latitud
-    cliente.longitud = datos.longitud
-    db.commit()
-    db.refresh(cliente)
-    return {
-        "status": "success",
-        "message": f"Ubicación de {cliente.nombre} actualizada con éxito",
-        "coordenadas": {"lat": cliente.latitud, "lng": cliente.longitud}
-    }
-
-# 👤 ENDPOINT PARA EL PRE-REGISTRO DE CLIENTES (SOLICITAR PIN)
+# 👤 ENDPOINT ORIGINAL DE PRE-REGISTRO (SOLICITAR PIN)
 @app.post("/api/clientes/pre-registro")
 def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obtener_db)):
+    # Verificar si el correo ya existe
     existe = db.query(models.Cliente).filter(models.Cliente.correo == datos.correo).first()
     if existe:
         raise HTTPException(status_code=400, detail="El correo ya se encuentra registrado.")
     
+    # Generar un PIN de 6 dígitos para la activación
+    import random
     pin_generado = "".join([str(random.randint(0, 9)) for _ in range(6)])
     
-    print("\n" + "="*50)
-    print(f"       [EMAIL MOCK] PIN enviado a {datos.correo}: {pin_generado}")
-    print("="*50 + "\n")
+    # Imprimir el PIN en la terminal por seguridad
+    print(f"\n[EMAIL MOCK] PIN enviado a {datos.correo}: {pin_generado}\n")
     
     nuevo_cliente = models.Cliente(
         nombre=datos.nombre,
@@ -87,7 +58,27 @@ def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obt
     )
     db.add(nuevo_cliente)
     db.commit()
+    
     return {"status": "success", "mensaje": "PIN generado con éxito"}
+
+# 🔐 ENDPOINT ORIGINAL DE VERIFICAR EL PIN DE ACTIVACIÓN
+@app.post("/api/clientes/verificar-pin")
+def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depends(obtener_db)):
+    cliente = db.query(models.Cliente).filter(
+        models.Cliente.correo == datos.correo,
+        models.Cliente.pin_activacion == datos.codigo
+    ).first()
+    
+    if not cliente:
+        raise HTTPException(status_code=400, detail="El PIN introducido es incorrecto.")
+    
+    cliente.activo = True
+    cliente.pin_activacion = None  # Limpiamos el PIN usado
+    db.commit()
+    
+    return {"status": "success", "mensaje": "Cuenta activada con éxito"}
+
+
 
 # 🔐 ENDPOINT PARA VERIFICAR EL PIN DE ACTIVACIÓN
 @app.post("/api/clientes/verificar-pin")

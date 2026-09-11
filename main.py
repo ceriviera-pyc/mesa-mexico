@@ -12,10 +12,14 @@ import schemas
 
 app = FastAPI(title="Mesa México - API SaaS")
 
-# 🔌 Configuración de CORS para evitar bloqueos de red
+# Configuración de seguridad CORS reforzada
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://onrender.com",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

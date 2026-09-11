@@ -52,6 +52,55 @@ def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Dep
         "coordenadas": {"lat": cliente.latitud, "lng": cliente.longitud}
     }
 
+# 👤 ENDPOINT PARA EL PRE-REGISTRO DE CLIENTES (SOLICITAR PIN)
+@app.post("/api/clientes/pre-registro")
+def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obtener_db)):
+    # Verificar si el correo ya existe
+    existe = db.query(models.Cliente).filter(models.Cliente.correo == datos.correo).first()
+    if existe:
+        raise HTTPException(status_code=400, detail="El correo ya se encuentra registrado.")
+    
+    # Generar un PIN de 6 dígitos para la activación
+    import random
+    pin_generado = "".join([str(random.randint(0, 9)) for _ in range(6)])
+    
+    # Imprimir el PIN en la terminal por seguridad para que lo puedas copiar
+    print("\n" + "="*50)
+    print(f"       [EMAIL MOCK] PIN enviado a {datos.correo}: {pin_generado}")
+    print("="*50 + "\n")
+    
+    # Guardamos temporalmente el registro en modo inactivo junto con su PIN
+    nuevo_cliente = models.Cliente(
+        nombre=datos.nombre,
+        telefono=datos.telefono,
+        correo=datos.correo,
+        password=datos.password,
+        pin_activacion=pin_generado,
+        activo=False
+    )
+    db.add(nuevo_cliente)
+    db.commit()
+    
+    return {"status": "success", "mensaje": "PIN generado con éxito"}
+
+# 🔐 ENDPOINT PARA VERIFICAR EL PIN DE ACTIVACIÓN
+@app.post("/api/clientes/verificar-pin")
+def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depends(obtener_db)):
+    cliente = db.query(models.Cliente).filter(
+        models.Cliente.correo == datos.correo,
+        models.Cliente.pin_activacion == datos.codigo  # Usa 'codigo' emparejado con tu schema
+    ).first()
+    
+    if not cliente:
+        raise HTTPException(status_code=400, detail="El PIN introducido es incorrecto.")
+    
+    cliente.activo = True
+    cliente.pin_activacion = None  # Limpiamos el PIN usado
+    db.commit()
+    
+    return {"status": "success", "mensaje": "Cuenta activada con éxito"}
+
+
 # Tu función que ya tenías abajo (Línea 41 en tu pantalla)
 def obtener_db():
     db = database.SessionLocal()

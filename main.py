@@ -60,7 +60,7 @@ def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obt
     
     return {"status": "success", "mensaje": "PIN generado con éxito"}
 
-# 🔐 ENDPOINT ORIGINAL DE VERIFICAR EL PIN DE ACTIVACIÓN
+# 🔐 ENDPOINT DE VERIFICACIÓN DE PIN ORIGINAL (UNIFICADO)
 @app.post("/api/clientes/verificar-pin")
 def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depends(obtener_db)):
     cliente = db.query(models.Cliente).filter(
@@ -71,29 +71,35 @@ def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depend
     if not cliente:
         raise HTTPException(status_code=400, detail="El PIN introducido es incorrecto.")
     
-    cliente.verificado = True           # 👈 Corregido con tu columna real
-    cliente.codigo_verificacion = None  # Limpiamos el PIN usado    
+    cliente.verificado = True
+    cliente.codigo_verificacion = None  # Limpiamos el PIN usado
     db.commit()
     
     return {"status": "success", "mensaje": "Cuenta activada con éxito"}
 
-
-
-# 🔐 ENDPOINT PARA VERIFICAR EL PIN DE ACTIVACIÓN
-@app.post("/api/clientes/verificar-pin")
-def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depends(obtener_db)):
-    cliente = db.query(models.Cliente).filter(
-        models.Cliente.correo == datos.correo,
-        models.Cliente.pin_activacion == datos.codigo
-    ).first()
+# 🔑 ENDPOINT PARA EL LOGIN DIARIO CONECTADO A TU COLUMNA VERIFICADO
+@app.post("/api/clientes/login")
+def login_diario_cliente(credenciales: schemas.ClienteLogin, db: Session = Depends(obtener_db)):
+    correo_limpio = credenciales.correo.lower().strip()
+    cliente = db.query(models.Cliente).filter(models.Cliente.correo == correo_limpio).first()
     
-    if not cliente:
-        raise HTTPException(status_code=400, detail="El PIN introducido es incorrecto.")
-    
-    cliente.activo = True
-    cliente.pin_activacion = None
-    db.commit()
-    return {"status": "success", "mensaje": "Cuenta activada con éxito"}
+    if not cliente or cliente.password != credenciales.password:
+        raise HTTPException(status_code=401, detail="🚫 Credenciales incorrectas.")
+        
+    if not cliente.verificado:
+        raise HTTPException(status_code=400, detail="🚫 Tu cuenta aún no ha sido activada con su PIN.")
+        
+    return {
+        "status": "success",
+        "mensaje": f"¡Inicio de sesión exitoso! Bienvenido, {cliente.nombre}.",
+        "cliente": { 
+            "id": cliente.id, 
+            "nombre": cliente.nombre, 
+            "correo": cliente.correo,
+            "rol": getattr(cliente, 'rol', 'cliente')
+        }
+    }
+
 
 #  Tu función que ya tenías abajo (Línea 41 en tu pantalla)
 def obtener_db():

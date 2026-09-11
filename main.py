@@ -27,6 +27,9 @@ app.add_middleware(
 )
 
 
+# 🚀 Esto obliga a Render a tirar la base de datos vieja y crear las nuevas columnas de GPS, teléfono y PIN
+models.Base.metadata.drop_all(bind=database.engine)
+models.Base.metadata.create_all(bind=database.engine)
 
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")

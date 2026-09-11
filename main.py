@@ -42,7 +42,6 @@ def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obt
         raise HTTPException(status_code=400, detail="El correo ya se encuentra registrado.")
     
     # Generar un PIN de 6 dígitos para la activación
-    import random
     pin_generado = "".join([str(random.randint(0, 9)) for _ in range(6)])
     
     # Imprimir el PIN en la terminal por seguridad

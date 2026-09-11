@@ -6,18 +6,18 @@ from sqlalchemy.orm import Session
 from database import obtener_db
 import database
 import models
-import schemas  # 👈 Solo una importación limpia de schemas aquí abajo
+import schemas
 import datetime as dt
-
-
+import os
+import random
 
 app = FastAPI(title="Mesa México - API SaaS")
 
-# Configuración de seguridad CORS reforzada
+# Configuración de seguridad CORS reforzada (Corregida sin barra diagonal / al final)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://mesa-mexico-ceriviera.onrender.com/",
+        "https://mesa-mexico-ceriviera.onrender.com",
         "http://localhost:8000",
         "http://127.0.0.1:8000"
     ],
@@ -26,45 +26,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# 🚀 Esto obliga a Render a tirar la base de datos vieja y crear las nuevas columnas de GPS, teléfono y PIN
+# 🚀 Inicialización segura de tablas en la base de datos SQLite
 models.Base.metadata.create_all(bind=database.engine)
 
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-import os
-
-# 💥 ENDPOINT DE EMERGENCIA PARA BORRAR LA BASE DE DATOS VIEJA EN RENDER
+# 💥 ENDPOINT DE EMERGENCIA PARA RESETEAR LA BASE DE DATOS EN RENDER
 @app.get("/api/admin/limpiar-db-nube")
-def limpiar_db_nube():
+def limpiar_db_nube(db: Session = Depends(obtener_db)):
     ruta_db = "mesa_mexico.db"
-    if os.path.exists(ruta_db):
-        try:
+    try:
+        if os.path.exists(ruta_db):
+            # Cerramos conexiones activas antes de remover el archivo físico
+            db.close()
             os.remove(ruta_db)
-            # Recreamos de inmediato las tablas con las columnas correctas
-            models.Base.metadata.create_all(bind=database.engine)
-            return {"status": "success", "message": "¡Base de datos vieja borrada y recreada con éxito en la nube!"}
-        except Exception as e:
-            return {"status": "error", "message": f"No se pudo borrar: {e}"}
-    return {"status": "error", "message": "No se encontró el archivo de la base de datos."}
-
+        models.Base.metadata.create_all(bind=database.engine)
+        return {"status": "success", "message": "¡Base de datos vieja eliminada y recreada con éxito!"}
+    except Exception as e:
+        return {"status": "error", "message": f"Error al limpiar base de datos: {e}"}
 
 # 📍 ENDPOINT PARA RECIBIR Y GUARDAR LA UBICACIÓN DEL GPS
 @app.post("/api/ubicacion/actualizar")
 def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Depends(obtener_db)):
-    # Localmente buscamos al cliente ID 1 para hacer la prueba de guardado
     cliente = db.query(models.Cliente).filter(models.Cliente.id == 1).first()
-    
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
     
     cliente.latitud = datos.latitud
     cliente.longitud = datos.longitud
-    
     db.commit()
     db.refresh(cliente)
-    
     return {
         "status": "success",
         "message": f"Ubicación de {cliente.nombre} actualizada con éxito",
@@ -74,21 +66,16 @@ def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Dep
 # 👤 ENDPOINT PARA EL PRE-REGISTRO DE CLIENTES (SOLICITAR PIN)
 @app.post("/api/clientes/pre-registro")
 def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obtener_db)):
-    # Verificar si el correo ya existe
     existe = db.query(models.Cliente).filter(models.Cliente.correo == datos.correo).first()
     if existe:
         raise HTTPException(status_code=400, detail="El correo ya se encuentra registrado.")
     
-    # Generar un PIN de 6 dígitos para la activación
-    import random
     pin_generado = "".join([str(random.randint(0, 9)) for _ in range(6)])
     
-    # Imprimir el PIN en la terminal por seguridad para que lo puedas copiar
     print("\n" + "="*50)
     print(f"       [EMAIL MOCK] PIN enviado a {datos.correo}: {pin_generado}")
     print("="*50 + "\n")
     
-    # Guardamos temporalmente el registro en modo inactivo junto con su PIN
     nuevo_cliente = models.Cliente(
         nombre=datos.nombre,
         telefono=datos.telefono,
@@ -99,7 +86,6 @@ def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obt
     )
     db.add(nuevo_cliente)
     db.commit()
-    
     return {"status": "success", "mensaje": "PIN generado con éxito"}
 
 # 🔐 ENDPOINT PARA VERIFICAR EL PIN DE ACTIVACIÓN
@@ -107,20 +93,18 @@ def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obt
 def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depends(obtener_db)):
     cliente = db.query(models.Cliente).filter(
         models.Cliente.correo == datos.correo,
-        models.Cliente.pin_activacion == datos.codigo  # Usa 'codigo' emparejado con tu schema
+        models.Cliente.pin_activacion == datos.codigo
     ).first()
     
     if not cliente:
         raise HTTPException(status_code=400, detail="El PIN introducido es incorrecto.")
     
     cliente.activo = True
-    cliente.pin_activacion = None  # Limpiamos el PIN usado
+    cliente.pin_activacion = None
     db.commit()
-    
     return {"status": "success", "mensaje": "Cuenta activada con éxito"}
 
-
-# Tu función que ya tenías abajo (Línea 41 en tu pantalla)
+#  Tu función que ya tenías abajo (Línea 41 en tu pantalla)
 def obtener_db():
     db = database.SessionLocal()
     try:
@@ -128,24 +112,20 @@ def obtener_db():
     finally:
         db.close()
 
-
 # 🏠 VISTA PRINCIPAL: Cargar la pantalla web
 @app.get("/")
 def leer_raiz():
     return FileResponse("index.html")
 
-# 🔍 MOTOR DE BÚSQUEDA DINÁMICO: Consulta real en las celdas de mesa_mexico.db
-@app.get("/buscar")
+# 🔍 MOTOR DE BÚSQUEDA DINÁMICO: Consulta real en las celdas de mesa_mexico.db (CON PREFIJO /API)
+@app.get("/api/buscar")
 def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session = Depends(obtener_db)):
-    # 1. Buscamos en las tablas todos los restaurantes que coincidan con la ciudad de forma elástica
     ciudad_limpia = ciudad.lower().strip()
     restaurantes = db.query(models.Restaurante).filter(models.Restaurante.ciudad.ilike(f"%{ciudad_limpia}%")).all()
     
     lista_respuesta = []
     
-    # 2. Mapeamos cada restaurante encontrado en el disco duro con sus datos reales
     for resto in restaurantes:
-        # Jalamos sus zonas de mesas compatibles desde la columna capacidad_max
         mesas_validas = db.query(models.Mesa).filter(
             models.Mesa.restaurante_id == resto.id,
             models.Mesa.capacidad_max >= personas
@@ -153,10 +133,11 @@ def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session 
         
         zonas_libres = list(set([m.zona for m in mesas_validas])) if mesas_validas else ["Terraza"]
         
-        # 🖼️ DIRECCIÓN MULTIMEDIA INTELIGENTE: Si la celda está vacía, asigna fotos reales .jpg
-        foto_default = "https://unsplash.com"
-        if "mariscos" in resto.nombre.lower():
-            foto_default = "https://unsplash.com" # Mariscos Riviera
+        foto_default = "/static/imagenes/defecto.jpg"
+        if "piaggia" in resto.nombre.lower():
+            foto_default = "/static/imagenes/piaggia.jpg"
+        elif "mariscos" in resto.nombre.lower():
+            foto_default = "/static/imagenes/mariscos.jpg"
 
         lista_respuesta.append({
             "id": resto.id,
@@ -164,22 +145,18 @@ def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session 
             "tipo_cocina": resto.tipo_cocina,
             "ciudad": resto.ciudad,
             "estado": resto.estado,
-            "imagen_url": resto.imagen_url if resto.imagen_url else foto_default,  # 👈 Usa la foto real o el respaldo premium
+            "imagen_url": resto.imagen_url if resto.imagen_url else foto_default,
             "sitio_web": resto.sitio_web,
             "mesas_compatibles_zonas": zonas_libres
         })
-
         
     return {
         "status": "success",
         "restaurantes_disponibles": lista_respuesta
     }
 
-
-
-# 🔑 LOGIN DIARIO REAL: Validación desde las celdas del .db
-@app.get("/clientes/login")
-@app.post("/clientes/login")
+# 🔑 LOGIN DIARIO REAL: Validación desde las celdas del .db (CON PREFIJO /API Y MÉTODO POST ÚNICO)
+@app.post("/api/clientes/login")
 def login_diario_cliente(credenciales: schemas.ClienteLogin, db: Session = Depends(obtener_db)):
     correo_limpio = credenciales.correo.lower().strip()
     cliente = db.query(models.Cliente).filter(models.Cliente.correo == correo_limpio).first()
@@ -190,11 +167,16 @@ def login_diario_cliente(credenciales: schemas.ClienteLogin, db: Session = Depen
     return {
         "status": "success",
         "mensaje": f"¡Inicio de sesión exitoso! Bienvenido, {cliente.nombre}.",
-        "cliente": { "id": cliente.id, "nombre": cliente.nombre, "correo": cliente.correo }
+        "cliente": { 
+            "id": cliente.id, 
+            "nombre": cliente.nombre, 
+            "correo": cliente.correo,
+            "rol": getattr(cliente, 'rol', 'cliente')
+        }
     }
 
-# 🏢 REGISTRO DE SOCIOS COMERCIALES (EMPRESAS)
-@app.post("/empresa/registrar")
+# 🏢 REGISTRO DE SOCIOS COMERCIALES (EMPRESAS - CON PREFIJO /API)
+@app.post("/api/empresa/registrar")
 def registrar_cuenta_empresarial(cliente: schemas.ClienteCreate, db: Session = Depends(obtener_db)):
     correo_limpio = cliente.correo.lower().strip()
     existe = db.query(models.Cliente).filter(models.Cliente.correo == correo_limpio).first()
@@ -208,7 +190,7 @@ def registrar_cuenta_empresarial(cliente: schemas.ClienteCreate, db: Session = D
         correo=correo_limpio,
         password=cliente.password,
         rol="empresa",
-        verificado=True
+        activo=True # Las cuentas corporativas se activan de inmediato para pruebas directas
     )
     db.add(nueva_empresa)
     db.commit()
@@ -219,8 +201,8 @@ def registrar_cuenta_empresarial(cliente: schemas.ClienteCreate, db: Session = D
         "empresa_id": nueva_empresa.id
     }
 
-# 🖼️ ALTA DE RESTAURANTE REAL (CONEXIÓN RELACIONAL COMPLETA)
-@app.post("/restaurantes/crear")
+# 🖼️ ALTA DE RESTAURANTE REAL (CONEXIÓN RELACIONAL COMPLETA CON PREFIJO /API)
+@app.post("/api/restaurantes/crear")
 def crear_restaurante_empresarial(restaurante: schemas.RestauranteCreate, empresa_id: int, db: Session = Depends(obtener_db)):
     dueno = db.query(models.Cliente).filter(models.Cliente.id == empresa_id, models.Cliente.rol == "empresa").first()
     if not dueno:
@@ -248,14 +230,15 @@ def crear_restaurante_empresarial(restaurante: schemas.RestauranteCreate, empres
     )
     db.add(primera_mesa)
     db.commit()
+    
     return {
         "status": "success",
         "restaurantes_disponibles": f"¡El restaurante '{restaurante.nombre}' ha sido dado de alta con éxito!",
         "restaurante_id": nuevo_local.id
     }
 
-# 📅 MOTOR RELACIONAL MULTIUSUARIO: Lógica dinámica con módulo antichoque de 2 horas
-@app.post("/reservas/rapida")
+# 📅 MOTOR RELACIONAL MULTIUSUARIO: Lógica con módulo antichoque de 2 horas (CON PREFIJO /API)
+@app.post("/api/reservas/rapida")
 def crear_reserva_rapida_horario(restaurante_id: int, hora_texto: str, cliente_correo: str, db: Session = Depends(obtener_db)):
     cliente = db.query(models.Cliente).filter(models.Cliente.correo == cliente_correo.lower().strip()).first()
     if not cliente:
@@ -316,29 +299,3 @@ def crear_reserva_rapida_horario(restaurante_id: int, hora_texto: str, cliente_c
     db.commit()
 
     return PlainTextResponse(f"¡RESERVACIÓN CONFIRMADA REAL! Mesa {mesa_asignada.numero_mesa} ({mesa_asignada.zona}) asignada con éxito para las {hora_texto} a nombre de {cliente.nombre}.", status_code=200)
-
-
-# -------------------------------------------------------------
-# Pégalo al final de main.py
-# -------------------------------------------------------------
-@app.post("/api/ubicacion/actualizar")
-def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Depends(obtener_db)):
-    # Localmente buscamos al cliente ID 1 (Rafael) para hacer la prueba
-    cliente = db.query(models.Cliente).filter(models.Cliente.id == 1).first()
-
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
-
-    cliente.latitud = datos.latitud
-    cliente.longitud = datos.longitud
-
-    db.commit()
-    db.refresh(cliente)
-
-    return {
-        "status": "success",
-        "message": f"Ubicación de {cliente.nombre} actualizada",
-        "coordenadas": {"lat": cliente.latitud, "lng": cliente.longitud}
-    }
-
-

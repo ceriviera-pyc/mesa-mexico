@@ -26,9 +26,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 🚀 Inicialización segura de tablas en la base de datos SQLite
+# 🚀 Esto obligará a Render a limpiar el disco duro virtual y meter la columna 'verificado'
+models.Base.metadata.drop_all(bind=database.engine)
 models.Base.metadata.create_all(bind=database.engine)
-import os
+
 
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")

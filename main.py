@@ -4,10 +4,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 from database import obtener_db
-import database, models, schemas
-import datetime as dt
+import database
 import models
-import schemas
+import schemas  # 👈 Solo una importación limpia de schemas aquí abajo
+import datetime as dt
+
 
 
 app = FastAPI(title="Mesa México - API SaaS")

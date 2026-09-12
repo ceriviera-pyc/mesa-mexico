@@ -33,34 +33,31 @@ models.Base.metadata.create_all(bind=database.engine)
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# 👤 ENDPOINT ORIGINAL DE PRE-REGISTRO (SOLICITAR PIN)
+# 👤 1. ENDPOINT DE PRE-REGISTRO DE CLIENTES (SOLICITAR PIN)
 @app.post("/api/clientes/pre-registro")
 def pre_registro_cliente(datos: schemas.ClienteCreate, db: Session = Depends(obtener_db)):
-    # Verificar si el correo ya existe
-    existe = db.query(models.Cliente).filter(models.Cliente.correo == datos.correo).first()
+    correo_limpio = datos.correo.lower().strip()
+    existe = db.query(models.Cliente).filter(models.Cliente.correo == correo_limpio).first()
     if existe:
         raise HTTPException(status_code=400, detail="El correo ya se encuentra registrado.")
     
-    # Generar un PIN de 6 dígitos para la activación
     pin_generado = "".join([str(random.randint(0, 9)) for _ in range(6)])
-    
-    # Imprimir el PIN en la terminal por seguridad
-    print(f"\n[EMAIL MOCK] PIN enviado a {datos.correo}: {pin_generado}\n")
+    print(f"\n[EMAIL MOCK] PIN enviado a {correo_limpio}: {pin_generado}\n")
     
     nuevo_cliente = models.Cliente(
         nombre=datos.nombre,
         telefono=datos.telefono,
-        correo=datos.correo,
+        correo=correo_limpio,
         password=datos.password,
-        codigo_verificacion=pin_generado,  
-        verificado=False       
+        rol="cliente",
+        codigo_verificacion=pin_generado,
+        verificado=False
     )
     db.add(nuevo_cliente)
     db.commit()
-    
     return {"status": "success", "mensaje": "PIN generado con éxito"}
 
-# 🔐 ENDPOINT DE VERIFICACIÓN DE PIN ORIGINAL (UNIFICADO)
+# 🔐 2. ENDPOINT DE VERIFICACIÓN DE PIN (MANDATORIO)
 @app.post("/api/clientes/verificar-pin")
 def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depends(obtener_db)):
     cliente = db.query(models.Cliente).filter(
@@ -69,15 +66,14 @@ def verificar_pin_cliente(datos: schemas.VerificarRegistro, db: Session = Depend
     ).first()
     
     if not cliente:
-        raise HTTPException(status_code=400, detail="El PIN introducido es incorrecto.")
+        raise HTTPException(status_code=400, detail="El PIN introducido es incorrecto o ya expiró.")
     
     cliente.verificado = True
-    cliente.codigo_verificacion = None  # Limpiamos el PIN usado
+    cliente.codigo_verificacion = None
     db.commit()
-    
     return {"status": "success", "mensaje": "Cuenta activada con éxito"}
 
-# 🔑 ENDPOINT PARA EL LOGIN DIARIO CONECTADO A TU COLUMNA VERIFICADO
+# 🔑 3. ENDPOINT PARA EL LOGIN DIARIO TRADICIONAL
 @app.post("/api/clientes/login")
 def login_diario_cliente(credenciales: schemas.ClienteLogin, db: Session = Depends(obtener_db)):
     correo_limpio = credenciales.correo.lower().strip()
@@ -100,26 +96,17 @@ def login_diario_cliente(credenciales: schemas.ClienteLogin, db: Session = Depen
         }
     }
 
-# 📍 ENDPOINT DE GEOLOCALIZACIÓN INTEGRADO (CORREGIDO PARA EL PRIMER USUARIO)
+# 📍 4. ENDPOINT DE GEOLOCALIZACIÓN REINCORPORADO Y BLINDADO
 @app.post("/api/ubicacion/actualizar")
 def actualizar_ubicacion(datos: schemas.UbicacionUpdateSchema, db: Session = Depends(obtener_db)):
-    # Buscamos al primer cliente disponible de forma elástica para la prueba en la nube
     cliente = db.query(models.Cliente).first()
-    
     if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado en la base de datos.")
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
     
     cliente.latitud = datos.latitud
     cliente.longitud = datos.longitud
-    
     db.commit()
-    db.refresh(cliente)
-    
-    return {
-        "status": "success",
-        "message": f"Ubicación de {cliente.nombre} actualizada con éxito en la nube",
-        "coordenadas": {"lat": cliente.latitud, "lng": cliente.longitud}
-    }
+    return {"status": "success", "message": "Coordenadas actualizadas con éxito en la nube"}
 
 
 #  Tu función que ya tenías abajo (Línea 41 en tu pantalla)

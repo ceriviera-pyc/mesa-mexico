@@ -29,6 +29,24 @@ app.add_middleware(
 # 🚀 Esto obligará a Render a limpiar el disco duro virtual y meter la columna 'verificado'
 models.Base.metadata.create_all(bind=database.engine)
 
+# 🚀 SEMILLA AUTOMÁTICA: Crea tu cuenta de fábrica si Render borra la base de datos
+db_semilla = database.SessionLocal()
+try:
+    admin_existe = db_semilla.query(models.Cliente).filter(models.Cliente.correo == "ceriviera@gmail.com").first()
+    if not admin_existe:
+        nuevo_admin = models.Cliente(
+            nombre="Rafael",
+            telefono="9982602714",
+            correo="ceriviera@gmail.com",
+            password="123",  # Contraseña corta fija para tus pruebas rápidas
+            rol="cliente",
+            verificado=True  # Cuenta activa de nacimiento, sin necesidad de usar PIN
+        )
+        db_semilla.add(nuevo_admin)
+        db_semilla.commit()
+finally:
+    db_semilla.close()
+
 
 # 📁 Montar la carpeta static para los archivos CSS y JS
 app.mount("/static", StaticFiles(directory="static"), name="static")

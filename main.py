@@ -28,9 +28,22 @@ app.add_middleware(
 
 # 🚀 Esto obligará a Render a limpiar el disco duro virtual y meter la columna 'verificado'
 models.Base.metadata.create_all(bind=database.engine)
+db_semilla = database.SessionLocal()
+# 🏢 INYECCIÓN AUTOMÁTICA DE TU SEED.PY SI LA BASE DE DATOS ESTÁ VACÍA
+try:
+    total_restaurantes = db_semilla.query(models.Restaurante).count()
+    if total_restaurantes == 0:
+        print("\n🌱 Base de datos vacía. Sembrando restaurantes desde seed.py de forma automática...")
+        # Importamos la función de tu archivo seed y la ejecutamos en el arranque
+        import subprocess
+        subprocess.run(["python", "seed.py"])
+        print("✅ Restaurantes sembrados con éxito.\n")
+except Exception as e:
+    print(f"⚠️ No se pudo ejecutar el sembrador automático: {e}")
+
 
 # 🚀 SEMILLA AUTOMÁTICA: Crea tu cuenta de fábrica si Render borra la base de datos
-db_semilla = database.SessionLocal()
+
 try:
     admin_existe = db_semilla.query(models.Cliente).filter(models.Cliente.correo == "ceriviera@gmail.com").first()
     if not admin_existe:

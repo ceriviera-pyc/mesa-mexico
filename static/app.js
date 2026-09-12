@@ -396,6 +396,8 @@ document.getElementById('btn-actualizar-ubicacion').addEventListener('click', ()
             .then(data => {
                 alert("¡Ubicación actualizada con éxito en la base de datos!");
                 console.log("Respuesta de FastAPI:", data);
+                // 👈 ESTA ES LA LÍNEA NUEVA QUE RELLENA TU CAJA DE BÚSQUEDA AL INSTANTE
+                document.getElementById('busqueda-input').value = "Playa del Carmen";
                 btn.innerText = textoOriginal;
                 btn.disabled = false;
             })

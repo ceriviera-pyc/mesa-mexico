@@ -47,6 +47,11 @@ class Restaurante(Base):
     # 🗺️ Coordenadas Físicas del Establecimiento (AGREGA ESTAS DOS LÍNEAS AQUÍ)
     latitud = Column(Float, nullable=True)
     longitud = Column(Float, nullable=True)
+    
+    # ⏰ Horarios de operación comercial
+    hora_apertura = Column(String, default="13:00")  # Abre a la 1:00 PM por defecto
+    hora_cierre = Column(String, default="23:00")    # Cierra a las 11:00 PM por defecto
+    intervalo_bloque = Column(Integer, default=30)   # Genera bloques cada 30 minutos
 
     # Relaciones
     dueno = relationship("Cliente", back_populates="restaurantes_propios")

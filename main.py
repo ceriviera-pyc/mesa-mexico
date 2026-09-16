@@ -183,19 +183,13 @@ def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session 
         
         zonas_libres = list(set([m.zona for m in mesas_validas])) if mesas_validas else ["Terraza"]
         
-        foto_default = "/static/imagenes/defecto.jpg"
-        if "piaggia" in resto.nombre.lower():
-            foto_default = "/static/imagenes/piaggia.jpg"
-        elif "mariscos" in resto.nombre.lower():
-            foto_default = "/static/imagenes/mariscos.jpg"
-
         lista_respuesta.append({
             "id": resto.id,
             "nombre": resto.nombre,
             "tipo_cocina": resto.tipo_cocina,
             "ciudad": resto.ciudad,
             "estado": resto.estado,
-            "imagen_url": resto.imagen_url if resto.imagen_url else foto_default,
+            "imagen_url": resto.imagen_url if resto.imagen_url else "/static/imagenes/defecto.jpg",
             "sitio_web": resto.sitio_web,
             "mesas_compatibles_zonas": zonas_libres
         })

@@ -328,12 +328,9 @@ async function ejecutarBusquedaReal() {
                 const ciudadLocal = resto.ciudad || ciudad;
                 const idLocal = resto.id || 1;
 
-                let fotoFinal = "/static/imagenes/defecto.jpg";
-                if (nombreLocal.toLowerCase().includes('piaggia')) {
-                    fotoFinal = "/static/imagenes/defecto.jpg";
-                } else if (nombreLocal.toLowerCase().includes('mariscos')) {
-                    fotoFinal = "/static/imagenes/defecto.jpg";
-                }
+// ✅ PEGA ESTO:
+                let fotoFinal = resto.imagen_url || "/static/imagenes/defecto.jpg";
+ 
 
                 tarjeta.innerHTML = `
                     <div class="foto-contenedor" style="background-image: url('${fotoFinal}') !important; display: block !important;"></div>

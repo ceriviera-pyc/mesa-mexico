@@ -39,7 +39,7 @@ def alimentar_base_datos():
             ciudad="Guadalajara", 
             estado="Jalisco", 
             tipo_cocina="Mexicana Tradicional",
-            imagen_url="https://unsplash.com",
+            imagen_url="/static/imagenes/cantina.jpg",
             sitio_web="https://google.com"
         )
 

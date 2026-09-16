@@ -24,23 +24,41 @@ def alimentar_base_datos():
             estado="Quintana Roo", 
             tipo_cocina="Mariscos",
             imagen_url="/static/imagenes/mariscos.jpg",
-            sitio_web="https://google.com"
+            sitio_web="https://google.com",
+           
+        # ⏰ Definimos su horario particular:
+            hora_apertura="12:00",   # Abre a las 12:00 PM
+            hora_cierre="22:00",     # Cierre a las 10:00 PM
+            intervalo_bloque=30      # Botones cada 30 minutos            
+        
         )
+        
         restaurante2 = models.Restaurante(
             nombre="El Asador del Centro", 
             ciudad="Ciudad de México", 
             estado="CDMX", 
             tipo_cocina="Cortes de Carne",
             imagen_url="/static/imagenes/Cortes de Carne.jpg",
-            sitio_web="https://google.com"
+            sitio_web="https://google.com",
+        # ⏰ Definimos su horario particular:
+            hora_apertura="12:00",   # Abre a las 12:00 PM
+            hora_cierre="22:00",     # Cierre a las 10:00 PM
+            intervalo_bloque=30      # Botones cada 30 minutos   
+                  
         )
+        
         restaurante3 = models.Restaurante(
             nombre="La Cantina de Guadalajara", 
             ciudad="Guadalajara", 
             estado="Jalisco", 
             tipo_cocina="Mexicana Tradicional",
             imagen_url="/static/imagenes/cantina.jpg",
-            sitio_web="https://google.com"
+            sitio_web="https://google.com",
+        # ⏰ Definimos su horario particular:
+            hora_apertura="12:00",   # Abre a las 12:00 PM
+            hora_cierre="22:00",     # Cierre a las 10:00 PM
+            intervalo_bloque=30      # Botones cada 30 minutos
+        
         )
 
         db.add_all([restaurante1, restaurante2, restaurante3])

@@ -10,6 +10,11 @@ class RestauranteCreate(BaseModel):
     imagen_url: Optional[str] = "/static/imagenes/defecto.jpg"
     sitio_web: Optional[str] = None
 
+# ⏰ Agrega estas 3 líneas aquí abajo:
+    hora_apertura: Optional[str] = "13:00"
+    hora_cierre: Optional[str] = "23:00"
+    intervalo_bloque: Optional[int] = 30
+    
 # 👥 2. Datos obligatorios para el Registro Inicial (Comensal o Locales)
 class ClienteCreate(BaseModel):
     nombre: str

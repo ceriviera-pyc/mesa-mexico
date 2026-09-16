@@ -10,8 +10,17 @@ import schemas
 import datetime as dt
 import os
 import random
+import unicodedata
 
 app = FastAPI(title="Mesa México - API SaaS")
+
+def eliminar_acentos(texto: str) -> str:
+    if not texto:
+        return ""
+    texto_descompuesto = unicodedata.normalize('NFD', texto)
+    texto_limpio = "".join(c for c in texto_descompuesto if unicodedata.category(c) != 'Mn')
+    return texto_limpio.lower().strip()
+
 
 # Configuración de seguridad CORS reforzada (Corregida sin barra diagonal / al final)
 app.add_middleware(
@@ -158,8 +167,12 @@ def leer_raiz():
 @app.get("/api/buscar")
 def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session = Depends(obtener_db)):
     ciudad_limpia = ciudad.lower().strip()
-    restaurantes = db.query(models.Restaurante).filter(models.Restaurante.ciudad.ilike(f"%{ciudad_limpia}%")).all()
-    
+    ciudad_busqueda_limpia = eliminar_acentos(ciudad_limpia)
+    restaurantes = [
+        r for r in restaurantes 
+        if ciudad_busqueda_limpia in eliminar_acentos(r.ciudad)
+    ]
+
     lista_respuesta = []
     
     for resto in restaurantes:

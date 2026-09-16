@@ -23,7 +23,7 @@ def alimentar_base_datos():
             ciudad="Playa del Carmen", 
             estado="Quintana Roo", 
             tipo_cocina="Mariscos",
-            imagen_url="https://unsplash.com",
+            imagen_url="C:\App_VSC\mesa-mexico\static\imagenes\mariscos.jpg",
             sitio_web="https://google.com"
         )
         restaurante2 = models.Restaurante(
@@ -31,7 +31,7 @@ def alimentar_base_datos():
             ciudad="Ciudad de México", 
             estado="CDMX", 
             tipo_cocina="Cortes de Carne",
-            imagen_url="https://unsplash.com",
+            imagen_url="C:\App_VSC\mesa-mexico\static\imagenes\Cortes de Carne.jpg",
             sitio_web="https://google.com"
         )
         restaurante3 = models.Restaurante(

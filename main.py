@@ -169,7 +169,7 @@ def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session 
     ciudad_limpia = ciudad.lower().strip()
     ciudad_busqueda_limpia = eliminar_acentos(ciudad_limpia)
     restaurantes = [
-        r for r in buscar_restaurantes_disponibles 
+        r for r in db.query(models.Restaurante).all()
         if ciudad_busqueda_limpia in eliminar_acentos(r.ciudad)
     ]
 

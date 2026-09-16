@@ -192,25 +192,6 @@ def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session 
         "restaurantes_disponibles": lista_respuesta
     }
 
-# 🔑 LOGIN DIARIO REAL: Validación desde las celdas del .db (CON PREFIJO /API Y MÉTODO POST ÚNICO)
-@app.post("/api/clientes/login")
-def login_diario_cliente(credenciales: schemas.ClienteLogin, db: Session = Depends(obtener_db)):
-    correo_limpio = credenciales.correo.lower().strip()
-    cliente = db.query(models.Cliente).filter(models.Cliente.correo == correo_limpio).first()
-    
-    if not cliente or cliente.password != credenciales.password:
-        raise HTTPException(status_code=401, detail="🚫 Credenciales incorrectas.")
-        
-    return {
-        "status": "success",
-        "mensaje": f"¡Inicio de sesión exitoso! Bienvenido, {cliente.nombre}.",
-        "cliente": { 
-            "id": cliente.id, 
-            "nombre": cliente.nombre, 
-            "correo": cliente.correo,
-            "rol": getattr(cliente, 'rol', 'cliente')
-        }
-    }
 
 # 🏢 REGISTRO DE SOCIOS COMERCIALES (EMPRESAS - CON PREFIJO /API)
 @app.post("/api/empresa/registrar")

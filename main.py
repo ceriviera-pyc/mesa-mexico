@@ -12,6 +12,7 @@ import datetime as dt
 import os
 import random
 import unicodedata
+import crm
 
 app = FastAPI(title="Mesa México - API SaaS")
 
@@ -53,6 +54,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# 🔌 CONEXIÓN DEL MÓDULO CRM INDEPENDIENTE (Insértalo exactamente aquí)
+app.include_router(crm.router)
 
 # 🚀 Esto obligará a Render a limpiar el disco duro virtual y meter la columna 'verificado'
 models.Base.metadata.create_all(bind=database.engine)
@@ -370,3 +373,22 @@ def crear_reserva_rapida_horario(restaurante_id: int, hora_texto: str, cliente_c
     db.refresh(nueva_reserva)
     
     return PlainTextResponse(f"¡RESERVACIÓN CONFIRMADA REAL! Mesa {mesa_asignada.numero_mesa} ({mesa_asignada.zona}) asignada con éxito para las {hora_texto} a nombre de {cliente.nombre}.", status_code=200)
+
+# 🗑️ ENDPOINT PARA ELIMINAR UNA RESERVA PERMANENTEMENTE
+@app.delete("/api/reservas/{reserva_id}")
+def eliminar_reserva(reserva_id: int, db: Session = Depends(obtener_db)):
+    # 1. Buscamos la reserva en la tabla por su ID único
+    reserva = db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()
+    
+    # 2. Control de seguridad: Si no existe, avisamos al sistema
+    if not reserva:
+        raise HTTPException(status_code=404, detail="🚫 ERROR: La reserva no existe o ya fue eliminada.")
+    
+    try:
+        # 3. LÓGICA DE BORRADO: La eliminamos de la sesión y confirmamos el cambio en el archivo físico
+        db.delete(reserva)
+        db.commit()
+        return {"status": "success", "mensaje": f"La reservación #{reserva_id} fue eliminada con éxito de la base de datos."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"⚠️ No se pudo eliminar la reserva: {str(e)}")

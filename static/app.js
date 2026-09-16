@@ -418,6 +418,32 @@ async function solicitarMesaHorarioRapido(restauranteId, horaTexto, cantidadPers
         }
 }
 
+// 🗑️ FUNCIÓN GLOBAL: Envía la orden de eliminación al backend de Python
+async function borrarReservaServidor(reservaId) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente la reservación #${reservaId}?`)) {
+        return; // Si el usuario cancela el cuadro de diálogo, detenemos el flujo
+    }
+
+    try {
+        const respuesta = await fetch(`/api/reservas/${reservaId}`, {
+            method: 'DELETE'
+        });
+
+        const datos = await respuesta.json();
+
+        if (respuesta.ok) {
+            alert(`✅ Eliminada: ${datos.mensaje}`);
+            // Si tienes una función para listar tus reservas en pantalla, la llamas aquí para refrescar la vista
+        } else {
+            alert(`⚠️ Error: ${datos.detail || 'No se pudo procesar la eliminación.'}`);
+        }
+    } catch (error) {
+        alert("❌ Error crítico: No se pudo conectar con el servidor para eliminar la reserva.");
+    }
+}
+
+
+
 // Vinculamos el clic del botón ¡Vamos! al motor de búsqueda
 document.getElementById('btn-vamos').addEventListener('click', ejecutarBusquedaReal);
 

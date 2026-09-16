@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Time, Boolean, DateTime, Float  # 👈 Se agregó Float aquí
 from sqlalchemy.orm import relationship
 from database import Base
+import datetime as dt 
 
 class Cliente(Base):
     __tablename__ = "clientes"
@@ -85,7 +86,15 @@ class Reserva(Base):
     hora = Column(Time, nullable=False)
     num_comensales = Column(Integer, nullable=False)
     status = Column(String, default="Confirmada")
-
+    # 📝 1. NOTAS DEL CLIENTE (El corazón del CRM)
+    # Permite al usuario avisar si es un aniversario, si prefiere terraza o si hay alergias.
+    notas = Column(String, nullable=True)
+    # ⏳ 2. CONTROL DE TIEMPO AUTOMÁTICO (Auditoría interna)
+    # Guarda el milisegundo exacto en que se creó la reserva para saber cuándo se agendó.
+    creado_en = Column(DateTime, default=dt.datetime.utcnow)
+    # 🔄 3. HISTORIAL DE CAMBIOS
+    # Registra cuándo se modificó el estatus o el horario por última vez.
+    actualizado_en = Column(DateTime, default=dt.datetime.utcnow, onupdate=dt.datetime.utcnow)
     # Relaciones
     restaurante = relationship("Restaurante", back_populates="reservas")
     mesa = relationship("Mesa", back_populates="reservas")

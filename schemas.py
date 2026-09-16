@@ -56,9 +56,6 @@ class UbicacionSchema(BaseModel):
     longitud: float
 
 
-from pydantic import BaseModel
-from typing import Optional
-
 # 🗺️ Esquema para validar la geolocalización que viene del botón en app.js
 class UbicacionUpdateSchema(BaseModel):
     latitud: float

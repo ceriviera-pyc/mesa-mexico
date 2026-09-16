@@ -28,6 +28,7 @@ app.add_middleware(
 
 # 🚀 Esto obligará a Render a limpiar el disco duro virtual y meter la columna 'verificado'
 models.Base.metadata.create_all(bind=database.engine)
+
 db_semilla = database.SessionLocal()
 # 🏢 INYECCIÓN AUTOMÁTICA DE TU SEED.PY SI LA BASE DE DATOS ESTÁ VACÍA
 try:

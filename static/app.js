@@ -306,39 +306,57 @@ function actualizarInterfazUsuarioNav() {
     }
 }
 
-// 🏢 MOTOR DE BÚSQUEDA REDISEÑADO ESTILO OPENTABLE
+// 🏢 MOTOR DE BÚSQUEDA REDISEÑADO ESTILO OPENTABLE - TOTALMENTE DINÁMICO
 async function ejecutarBusquedaReal() {
     const ciudad = document.getElementById('busqueda-input').value.trim(); 
     const personas = document.getElementById('select-personas').value; 
     const contenedor = document.getElementById('contenedor-resultados');
+    
     if (!ciudad) return;
+    
     contenedor.innerHTML = '<div class="alerta-vacia">Buscando mesas libres...</div>';
+    
     try {
         const respuesta = await fetch(`/api/buscar?ciudad=${encodeURIComponent(ciudad)}&personas=${personas}`); 
         const resultado = await respuesta.json(); 
         contenedor.innerHTML = '';
+        
         const listaRestaurantes = resultado.restaurantes_disponibles || [];
+        
         if (listaRestaurantes.length > 0) {
             listaRestaurantes.forEach(resto => {
-                const tarjeta = document.createElement('div'); 
-                tarjeta.className = 'tarjeta-restaurante';
-                
                 const nombreLocal = resto.nombre || "Restaurante Corporativo";
                 const cocinaLocal = resto.tipo_cocina || "Especialidad";
                 const ciudadLocal = resto.ciudad || ciudad;
                 const idLocal = resto.id || 1;
+                const fotoFinal = resto.imagen_url || "/static/imagenes/defecto.jpg";
 
-// ✅ PEGA ESTO:
-                let fotoFinal = resto.imagen_url || "/static/imagenes/defecto.jpg";
- 
+                // ⏰ LÓGICA DE HORARIOS DINÁMICOS: Construimos los botones desde la lista del backend
+                const horasDisponibles = resto.horarios_disponibles || [];
+                let botonesHorariosHTML = '';
 
+                horasDisponibles.forEach(hora => {
+                    botonesHorariosHTML += `
+                        <button class="btn-horario" onclick="solicitarMesaHorarioRapido(${idLocal}, '${hora}', ${personas})">
+                            ${hora}
+                        </button>
+                    `;
+                });
+
+                if (horasDisponibles.length === 0) {
+                    botonesHorariosHTML = '<span class="sin-cupo">Sin horarios disponibles</span>';
+                }
+
+                // 🎨 Fabricamos la tarjeta física final en el HTML
+                const tarjeta = document.createElement('div'); 
+                tarjeta.className = 'tarjeta-restaurante';
                 tarjeta.innerHTML = `
                     <div class="foto-contenedor" style="background-image: url('${fotoFinal}') !important; display: block !important;"></div>
                     <div class="cuerpo-tarjeta">
                         <h3>${nombreLocal}</h3>
                         <div class="info-meta"><span>${cocinaLocal}</span> • <span>${ciudadLocal}</span></div>
                         <div class="bloque-horarios">
-                            <button class="btn-horario" onclick="solicitarMesaHorarioRapido(${idLocal}, '7:30 PM', ${personas})">7:30 pm</button>
+                            ${botonesHorariosHTML}
                         </div>
                     </div>
                 `;
@@ -346,10 +364,58 @@ async function ejecutarBusquedaReal() {
             });
         } else { 
             contenedor.innerHTML = '<div class="alerta-vacia">No se encontraron restaurantes con mesas libres en esta ciudad.</div>'; 
-        }
+        } 
     } catch (error) { 
         contenedor.innerHTML = '<div class="alerta-vacia">❌ Error de conexión al buscar en la base de datos.</div>'; 
     }
+}
+// 📅 FUNCIÓN GLOBAL: Conecta el clic del botón con tu API de Python
+async function solicitarMesaHorarioRapido(restauranteId, horaTexto, cantidadPersonas) {
+    const correoCliente = "ceriviera@gmail.com"; // Tu usuario de fábrica listo en la .db
+
+    try {
+        // Tubería digital: Mandamos las variables directo al endpoint de tu main.py
+        const url = `/api/reservas/rapida?restaurante_id=${restauranteId}&hora_texto=${encodeURIComponent(horaTexto)}&cliente_correo=${encodeURIComponent(correoCliente)}`;
+        
+        const respuesta = await fetch(url, {
+            method: 'POST'
+        });
+
+        const mensajeTexto = await respuesta.text();
+
+        // Creamos un elemento flotante profesional en la esquina de la pantalla
+        const aviso = document.createElement('div');
+        aviso.style.position = 'fixed';
+        aviso.style.bottom = '20px';
+        aviso.style.right = '20px';
+        aviso.style.padding = '15px 25px';
+        aviso.style.borderRadius = '8px';
+        aviso.style.color = '#fff';
+        aviso.style.fontWeight = 'bold';
+        aviso.style.zIndex = '9999';
+        aviso.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+
+        if (respuesta.ok) {
+            aviso.style.backgroundColor = '#2ecc71'; // Verde para éxito
+            aviso.innerHTML = `✅ ¡ÉXITO! ${mensajeTexto}`;
+            document.body.appendChild(aviso);
+            
+            // Recargamos la búsqueda para actualizar el estado visual de los botones
+            setTimeout(() => {
+                aviso.remove();
+                ejecutarBusquedaReal();
+            }, 2500);
+        } else {
+            aviso.style.backgroundColor = '#e74c3c'; // Rojo para choque de horarios
+            aviso.innerHTML = `⚠️ ATENCIÓN: ${mensajeTexto}`;
+            document.body.appendChild(aviso);
+            
+            setTimeout(() => { aviso.remove(); }, 4000);
+        }
+    
+        } catch (error) {
+            alert("❌ Error crítico: No se pudo conectar con el servidor de Mesa México.");
+        }
 }
 
 // Vinculamos el clic del botón ¡Vamos! al motor de búsqueda

@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 from database import obtener_db
+from datetime import datetime, timedelta
 import database
 import models
 import schemas
@@ -21,6 +22,24 @@ def eliminar_acentos(texto: str) -> str:
     texto_limpio = "".join(c for c in texto_descompuesto if unicodedata.category(c) != 'Mn')
     return texto_limpio.lower().strip()
 
+from datetime import datetime, timedelta
+
+def generar_bloques_horarios(hora_inicio_str: str, hora_fin_str: str, intervalo_minutos: int) -> list:
+    """Toma la apertura y el cierre en texto (Ej: '13:00', '22:00') y devuelve una lista de horas."""
+    formatos = "%H:%M"
+    try:
+        hora_actual = datetime.strptime(hora_inicio_str, formatos)
+        hora_limite = datetime.strptime(hora_fin_str, formatos)
+        
+        bloques = []
+        while hora_actual <= hora_limite:
+            bloques.append(hora_actual.strftime("%H:%M"))
+            hora_actual += timedelta(minutes=intervalo_minutos)
+            
+        return bloques
+    except Exception:
+        # Respaldo por si hay algún dato corrupto en la base de datos
+        return ["13:00", "14:00", "15:00", "18:00", "19:00", "20:00", "21:00", "22:00"]
 
 # Configuración de seguridad CORS reforzada (Corregida sin barra diagonal / al final)
 app.add_middleware(
@@ -183,6 +202,15 @@ def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session 
         
         zonas_libres = list(set([m.zona for m in mesas_validas])) if mesas_validas else ["Terraza"]
         
+        # ⏰ 1. EXTRAEMOS LOS HORARIOS DE LA BASE DE DATOS (Usamos valores seguros por si vienen vacíos)
+        apertura = getattr(resto, 'hora_apertura', '13:00')
+        cierre = getattr(resto, 'hora_cierre', '23:00')
+        intervalo = getattr(resto, 'intervalo_bloque', 30)
+
+        # ⏰ 2. LÓGICA MATEMÁTICA: Calculamos la lista de bloques de tiempo en la RAM
+        horarios_calculados = generar_bloques_horarios(apertura, cierre, intervalo)
+        
+        # 3. EMPAQUETAMOS TODO: Ahora sí incluimos la variable para que JavaScript la lea
         lista_respuesta.append({
             "id": resto.id,
             "nombre": resto.nombre,
@@ -191,8 +219,10 @@ def buscar_restaurantes_disponibles(ciudad: str, personas: int = 4, db: Session 
             "estado": resto.estado,
             "imagen_url": resto.imagen_url if resto.imagen_url else "/static/imagenes/defecto.jpg",
             "sitio_web": resto.sitio_web,
-            "mesas_compatibles_zonas": zonas_libres
+            "mesas_compatibles_zonas": zonas_libres,
+            "horarios_disponibles": horarios_calculados  # 👈 ¡AQUÍ ESTÁ LA PIEZA FALTA CONECTADA!
         })
+    
         
     return {
         "status": "success",
@@ -269,9 +299,18 @@ def crear_reserva_rapida_horario(restaurante_id: int, hora_texto: str, cliente_c
     if not cliente:
         return PlainTextResponse("🔒 ACCESO RESTRINGIDO: Inicia sesión.", status_code=401)
 
-    if "7:00" in hora_texto: hora_solicitada = dt.time(19, 0)
-    elif "7:15" in hora_texto: hora_solicitada = dt.time(19, 15)
-    else: hora_solicitada = dt.time(19, 30)
+    try:
+        # Convierte dinámicamente textos como "14:30" o "19:00" a un objeto de tiempo real de Python
+        # Soportando formatos limpios de 24 horas que envía el backend
+        hora_solicitada = dt.datetime.strptime(hora_texto.strip(), "%H:%M").time()
+    except ValueError:
+        # Por si el frontend envía el formato antiguo con "PM" o "am" (Ej: "7:30 PM")
+        try:
+            texto_limpio = hora_texto.upper().replace(".", "").strip() # Limpia "p.m." a "PM"
+            hora_solicitada = dt.datetime.strptime(texto_limpio, "%I:%M %p").time()
+        except Exception:
+            return PlainTextResponse("🚫 ERROR: El formato de hora enviado no es válido.", status_code=400)
+    
 
     fecha_hoy = dt.date.today()
     personas_reserva = 4
@@ -295,10 +334,16 @@ def crear_reserva_rapida_horario(restaurante_id: int, hora_texto: str, cliente_c
 
         colision_detectada = False
         for res in reservas_existentes:
+            print(f"\n🔍 COMPROBANDO CHOQUE:")
+            print(f"⏰ Hora solicitada en el botón: {hora_solicitada}")
+            print(f"💾 Hora ya guardada en la Base de Datos: {res.hora}")
+
             dt_existente = dt.datetime.combine(fecha_hoy, res.hora)
             dt_solicitado = dt.datetime.combine(fecha_hoy, hora_solicitada)
             diferencia_minutos = abs((dt_solicitado - dt_existente).total_seconds()) / 60
-
+            
+            print(f"🧮 Diferencia calculada por la PC: {diferencia_minutos} minutos\n")
+ 
             if diferencia_minutos < 120:
                 colision_detectada = True
                 break
@@ -322,5 +367,6 @@ def crear_reserva_rapida_horario(restaurante_id: int, hora_texto: str, cliente_c
 
     db.add(nueva_reserva)
     db.commit()
-
+    db.refresh(nueva_reserva)
+    
     return PlainTextResponse(f"¡RESERVACIÓN CONFIRMADA REAL! Mesa {mesa_asignada.numero_mesa} ({mesa_asignada.zona}) asignada con éxito para las {hora_texto} a nombre de {cliente.nombre}.", status_code=200)

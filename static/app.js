@@ -330,9 +330,9 @@ async function ejecutarBusquedaReal() {
 
                 let fotoFinal = "/static/imagenes/defecto.jpg";
                 if (nombreLocal.toLowerCase().includes('piaggia')) {
-                    fotoFinal = "/static/imagenes/piaggia.jpg";
+                    fotoFinal = "/static/imagenes/defecto.jpg";
                 } else if (nombreLocal.toLowerCase().includes('mariscos')) {
-                    fotoFinal = "/static/imagenes/mariscos.jpg";
+                    fotoFinal = "/static/imagenes/defecto.jpg";
                 }
 
                 tarjeta.innerHTML = `

@@ -6,9 +6,6 @@ let sesionMemoriaRam = {
 };
 let empresaActivaId = null; // Guardará el ID de la empresa al iniciar sesión
 
-document.addEventListener("DOMContentLoaded", () => {
-    actualizarInterfazUsuarioNav();
-});
 
 // 💼 FUNCIONES DE CONTROL VISUAL PARA SOCIOS COMERCIALES (EMPRESAS)
 function abrirModalEmpresa() {
@@ -556,4 +553,70 @@ document.getElementById('btn-actualizar-ubicacion').addEventListener('click', ()
         }
     );
 });
+
+// 👤 FUNCIÓN GLOBAL: Pinta los botones correctos en la barra superior según la sesión
+function actualizarInterfazUsuarioNav() {
+    const nav = document.getElementById('bloque-autenticacion-nav'); 
+    if (!nav) return; // Protección por si el HTML no ha cargado
+
+    const usuarioNombre = localStorage.getItem("usuario_nombre");
+    
+    if (usuarioNombre) { 
+        // ✅ VERSIÓN CORREGIDA: Agregamos z-index y quitamos estorbos para asegurar el clic real
+        nav.innerHTML = `
+            <div style="display:flex; gap:1rem; align-items:center; position:relative; z-index:999;">
+                <p style="font-size:0.95rem; color:white; font-weight:600; margin:0; white-space:nowrap;">👤 Hola, <span style="color:#10b981;">${usuarioNombre}</span></p>
+                <button class="btn-nav" style="border: 1px solid #da3743; color:#da3743; background:transparent; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:600; position:relative; z-index:1000;" onclick="ejecutarLogout()">
+                    Salir
+                </button>
+            </div>
+        `; 
+    } else { 
+        nav.innerHTML = `
+            <button class="btn-nav" style="color:white; background:none; border:1px solid white; padding:6px 12px; border-radius:6px; cursor:pointer; margin-right:10px;" onclick="abrirModalSesion('login')">Iniciar Sesión</button>
+            <button class="btn-nav btn-nav-primario" style="color:white; background:#2563eb; border:1px solid #2563eb; padding:6px 12px; border-radius:6px; cursor:pointer;" onclick="abrirModalSesion('registro')">Crear Cuenta</button>
+        `; 
+    }
+}
+
+
+// 🔄 ARRANQUE AUTOMÁTICO INFERIOR: Sincroniza la interfaz cuando la página se abre
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Despierta y pinta los botones correctos en el Nav
+    actualizarInterfazUsuarioNav();
+
+    // 2. Si el usuario no ha iniciado sesión, bloqueamos el contenedor inferior con el aviso
+    if (!localStorage.getItem("usuario_correo")) {
+        const contenedor = document.getElementById('contenedor-resultados');
+        if (contenedor) {
+            contenedor.innerHTML = '<div class="alerta-vacia">Inicia sesión para consultar las mesas libres.</div>';
+        }
+    }
+});
+
+// 🚪 FUNCIÓN BLINDADA DE LOGOUT: Cierra la sesión de forma limpia y segura
+function ejecutarLogout() { 
+    // 1. Borramos de forma definitiva las credenciales del navegador
+    localStorage.clear(); 
+    sessionStorage.clear();
+    
+    // 2. Sincronizamos y limpiamos la memoria RAM de respaldo si existe
+    if (typeof sesionMemoriaRam !== 'undefined') {
+        sesionMemoriaRam.nombre = null; 
+        sesionMemoriaRam.correo = null; 
+        sesionMemoriaRam.id = null;
+    }
+    
+    // 3. Redibujamos la barra superior para que reaparezcan "Iniciar Sesión" y "Crear Cuenta"
+    actualizarInterfazUsuarioNav(); 
+    
+    // 4. CONTROL DE SEGURIDAD INTERNO: Solo limpia el contenedor si existe en esta vista
+    const contenedor = document.getElementById('contenedor-resultados');
+    if (contenedor) {
+        contenedor.innerHTML = '<div class="alerta-vacia">Inicia sesión para consultar las mesas libres.</div>';
+    }
+    
+    // 5. Notificación final limpia
+    alert("Sesión cerrada con éxito."); 
+}
 

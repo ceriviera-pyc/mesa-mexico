@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mesa México - Panel de Control CRM</title>
+    <style>
+        :root {
+            --azul-premium: #0f172a;
+            --azul-acento: #2563eb;
+            --verde-exito: #10b981;
+            --rojo-error: #ef4444;
+            --gris-fondo: #f8fafc;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--gris-fondo);
+            margin: 0;
+            padding: 20px;
+            color: #334155;
+        }
+        .contenedor-crm {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .header-crm {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        h1 { margin: 0; color: var(--azul-premium); font-size: 28px; }
+        .contador-badge {
+            background: var(--azul-acento);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f1f5f9;
+            color: var(--azul-premium);
+            font-weight: 600;
+        }
+        tr:hover { background-color: #f8fafc; }
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .status-confirmada { background: #d1fae5; color: #065f46; }
+        .btn-cancelar {
+            background: #fee2e2;
+            color: var(--rojo-error);
+            border: 1px solid #fca5a5;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-cancelar:hover { background: var(--rojo-error); color: #fff; }
+        .notas-texto { font-style: italic; color: #64748b; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="contenedor-crm">
+    <div class="header-crm">
+        <h1>📊 Tablero de Control de Reservaciones CRM</h1>
+    <div class="bloque-busqueda" style="margin: 15px 0;">
+        <input type="text" id="buscador-crm-input" onkeyup="filtrarTablaCRM()" placeholder="🔍 Buscar por nombre de comensal..." style="padding: 10px 15px; width: 300px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px;">
+    </div>
+
+        <div id="contador-reservas" class="contador-badge">Reservas Activas: 0</div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Restaurante</th>
+                <th>Comensal</th>
+                <th>Teléfono</th>
+                <th>Mesa (Zona)</th>
+                <th>Fecha / Hora</th>
+                <th>Pax</th>
+                <th>Estado</th>
+                <th>Notas Especiales</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-cuerpo-crm">
+            <!-- JavaScript inyectará las filas de la base de datos aquí de forma dinámica -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // 🔌 LÓGICA DE CARGA CRM AUTOMÁTICA
+    async function cargarTableroAdministrador() {
+        const cuerpoTabla = document.getElementById('tabla-cuerpo-crm');
+        const contador = document.getElementById('contador-reservas');
+        
+        try {
+            // Llamamos a la API limpia que acabamos de testear en tu crm.py
+            const respuesta = await fetch('/api/crm/reservas');
+            const resultado = await respuesta.json();
+            
+            cuerpoTabla.innerHTML = '';
+            
+            if (resultado.status === "success") {
+                const reservas = resultado.datos_crm || [];
+                contador.innerHTML = `Reservas Activas: ${resultado.total_registros}`;
+                
+                if (reservas.length === 0) {
+                    cuerpoTabla.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b;">📅 No hay reservaciones registradas en el sistema actualmente.</td></tr>`;
+                    return;
+                }
+                
+                // Recorremos las celdas del JSON y fabricamos las filas de la tabla
+                reservas.forEach(res => {
+                    const fila = document.createElement('tr');
+                    fila.className = 'fila-reserva';
+                    fila.innerHTML = `
+                        <td><strong>#${res.reserva_id}</strong></td>
+                        <td>${res.restaurante}</td>
+                        <td class="clase-nombre-cliente">${res.cliente.nombre}</td>
+                        <td>${res.cliente.telefono}</td>
+                        <td>Mesa ${res.mesa.numero} (${res.mesa.zona})</td>
+                        <td>${res.fecha} • <strong>${res.hora}</strong></td>
+                        <td>${res.comensales}</td>
+                        <td><span class="badge-status status-confirmada">${res.status}</span></td>
+                        <td class="notas-texto">${res.notas || 'Sin especificaciones'}</td>
+                        <td>
+                            <button class="btn-cancelar" onclick="cancelarReservaDesdeTablero(${res.reserva_id})">🗑️ Eliminar</button>
+                        </td>
+                    `;
+                    cuerpoTabla.appendChild(fila);
+                });
+            }
+        } catch (error) {
+            cuerpoTabla.innerHTML = `<tr><td colspan="10" style="text-align:center; color:red;">❌ Error de conexión al cargar la agenda del CRM.</td></tr>`;
+        }
+    }
+
+    // 🗑️ CONEXIÓN DE ACCIÓN: Elimina la reserva y refresca la tabla automáticamente
+    async function cancelarReservaDesdeTablero(reservaId) {
+        if (!confirm(`¿Estás seguro de que deseas eliminar permanentemente la reservación #${reservaId} de la agenda del CRM?`)) return;
+        
+        try {
+            const respuesta = await fetch(`/api/reservas/${reservaId}`, { method: 'DELETE' });
+            if (respuesta.ok) {
+                cargarTableroAdministrador(); // Refresca la tabla en tiempo real sin recargar la página
+            }
+        } catch (error) {
+            alert("No se pudo procesar la eliminación en el servidor.");
+        }
+    }
+
+    // 🧠 LÓGICA DE FILTRADO EN TIEMPO REAL PREMIUM
+function filtrarTablaCRM() {
+    // 1. Capturamos lo que va escribiendo el usuario en minúsculas
+    const textoBuscado = document.getElementById('buscador-crm-input').value.toLowerCase().trim();
+    // 2. Extraemos todos los renglones que creamos con la clase 'fila-reserva'
+    const filas = document.querySelectorAll('.fila-reserva');
+
+    // 3. Recorremos fila por fila en la memoria RAM de la computadora
+    filas.forEach(fila => {
+        // Buscamos la celda específica que tiene nuestra clase identificadora
+        const celdaNombre = fila.querySelector('.clase-nombre-cliente');
+        
+        if (celdaNombre) {
+            const nombreTexto = celdaNombre.textContent || celdaNombre.innerText;
+            
+            // 4. CONDICIÓN LÓGICA: Si coincide, la fila permanece; si no, se oculta instantáneamente
+            if (nombreTexto.toLowerCase().includes(textoBuscado)) {
+                fila.style.display = ""; // Muestra la fila
+            } else {
+                fila.style.display = "none"; // Oculta la fila de la vista
+            }
+        }
+    });
+}
+
+    // Arrancamos la carga automática cuando el navegador abra la pantalla
+    document.addEventListener('DOMContentLoaded', cargarTableroAdministrador);
+</script>
+
+</body>
+</html>

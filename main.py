@@ -15,6 +15,8 @@ import unicodedata
 import crm
 
 app = FastAPI(title="Mesa México - API SaaS")
+# 📂 Definimos la ruta física raíz del proyecto para poder encontrar los archivos HTML
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def eliminar_acentos(texto: str) -> str:
     if not texto:
@@ -184,6 +186,12 @@ def obtener_db():
 @app.get("/")
 def leer_raiz():
     return FileResponse("index.html")
+
+# 🖥️ RUTA VISUAL: Despacha la pantalla del Tablero de Control Administrativo
+@app.get("/admin/crm")
+def abrir_pantalla_tablero_crm():
+    # Buscamos y mandamos al navegador el archivo html visual que acabamos de crear
+    return FileResponse(os.path.join(BASE_DIR, "crm.html"))
 
 # 🔍 MOTOR DE BÚSQUEDA DINÁMICO: Consulta real en las celdas de mesa_mexico.db (CON PREFIJO /API)
 @app.get("/api/buscar")

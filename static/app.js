@@ -371,12 +371,35 @@ async function ejecutarBusquedaReal() {
 }
 // 📅 FUNCIÓN GLOBAL: Conecta el clic del botón con tu API de Python
 async function solicitarMesaHorarioRapido(restauranteId, horaTexto, cantidadPersonas) {
-    const correoCliente = "ceriviera@gmail.com"; // Tu usuario de fábrica listo en la .db
+    // 🔒 LÓGICA CRM REAL: Intentamos traer el correo del usuario que hizo Login de verdad
+    // (Ajusta 'correo_usuario' según el nombre que use tu sistema para guardar la sesión)
+    const correoCliente = localStorage.getItem('usuario_correo') || sessionStorage.getItem('usuario_correo'); 
 
-    try {
-        // Tubería digital: Mandamos las variables directo al endpoint de tu main.py
-        const url = `/api/reservas/rapida?restaurante_id=${restauranteId}&hora_texto=${encodeURIComponent(horaTexto)}&cliente_correo=${encodeURIComponent(correoCliente)}`;
+    // 🛑 FILTRO DE SEGURIDAD FRONTEND: Si no hay sesión activa, bloqueamos el clic
+    if (!correoCliente) {
+        // Creamos el aviso rojo en la pantalla
+        const avisoError = document.createElement('div');
+        avisoError.style.position = 'fixed';
+        avisoError.style.bottom = '20px';
+        avisoError.style.right = '20px';
+        avisoError.style.padding = '15px 25px';
+        avisoError.style.borderRadius = '8px';
+        avisoError.style.color = '#fff';
+        avisoError.style.fontWeight = 'bold';
+        avisoError.style.zIndex = '9999';
+        avisoError.style.backgroundColor = '#e74c3c'; // Rojo
+        avisoError.innerHTML = `🔒 ACCESO RESTRINGIDO: Por favor, inicia sesión para reservar.`;
+        document.body.appendChild(avisoError);
         
+        setTimeout(() => { avisoError.remove(); }, 4000);
+        return; // Detiene la función por completo. No viaja nada por internet.
+    }
+
+    // Si pasa el filtro, el flujo continúa normalmente hacia el servidor...
+    try {
+        const url = `/api/reservas/rapida?restaurante_id=${restauranteId}&hora_texto=${encodeURIComponent(horaTexto)}&cliente_correo=${encodeURIComponent(correoCliente)}`;
+
+
         const respuesta = await fetch(url, {
             method: 'POST'
         });

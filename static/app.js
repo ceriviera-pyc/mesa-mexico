@@ -252,7 +252,7 @@ async function ejecutarPreRegistro() {
     }
 }
 
-// 🔐 5. DISPARAR ACTIVACIÓN REAL CON EL PIN DE 6 DÍGITOS (CON PREFIJO /API)
+// 🔐 5. DISPARAR ACTIVACIÓN REAL CON EL PIN DE 6 DÍGITOS (CON PREFIJO /API) - CORREGIDO
 async function ejecutarVerificacionUnica() {
     const correo = document.getElementById('reg-correo').value.trim();
     const pin = document.getElementById('reg-pin').value.trim();
@@ -272,11 +272,49 @@ async function ejecutarVerificacionUnica() {
         const resultado = await response.json();
 
         if (response.status === 200 && resultado.status === "success") {
-            alert("¡Cuenta verificada y activada con éxito!");
-            cambiarPestañaModal('login');
-            document.getElementById('login-correo').value = correo;
-            document.getElementById('bloque-datos-registro').style.display = 'flex';
-            document.getElementById('bloque-verificar-pin').style.display = 'none';
+            // 🔒 1. GUARDAMOS LA SESIÓN REAL EN EL NAVEGADOR (Usa los datos devueltos por Python)
+            if (resultado.cliente) {
+                localStorage.setItem("usuario_nombre", resultado.cliente.nombre);
+                localStorage.setItem("usuario_correo", resultado.cliente.correo);
+                localStorage.setItem("usuario_id", resultado.cliente.id);
+
+                // Sincronizamos tu variable de control en la memoria RAM
+                sesionMemoriaRam.nombre = resultado.cliente.nombre;
+                sesionMemoriaRam.correo = resultado.cliente.correo;
+                sesionMemoriaRam.id = resultado.cliente.id;
+            }
+
+            // 🔄 2. ACTUALIZAMOS LA INTERFAZ DE ARRIBA (El Nav dirá "Hola, Cinthia")
+            actualizarInterfazUsuarioNav();
+
+            // 🗑️ 3. BLINDAJE VISUAL: Nos aseguramos de mantener oculta la tabla rota de pruebas
+            const tablaPruebas = document.getElementById('bloque-datos-registro');
+            if (tablaPruebas) tablaPruebas.style.display = 'none';
+
+            // 🚪 4. CERRAMOS EL MODAL FLOTANTE (Ajusta el ID si tu contenedor del fondo se llama diferente)
+            // Esto quita la caja gris de la pantalla de inmediato
+            const modalFondo = document.getElementById('bloque-verificar-pin');
+            if (modalFondo) modalFondo.style.display = 'none';
+            
+            // Intenta cerrar el modal general (si tu contenedor principal usa otra clase o id)
+            // Por ejemplo: cerrarModalAutenticacion(); o cambiar el display a none de tu ventana gris.
+
+            // 🎨 5. PINTAMOS EL AVISO PROFESIONAL VERDE ABAJO A LA DERECHA
+            const avisoExito = document.createElement('div');
+            avisoExito.style.position = 'fixed';
+            avisoExito.style.bottom = '20px';
+            avisoExito.style.right = '20px';
+            avisoExito.style.padding = '15px 25px';
+            avisoExito.style.borderRadius = '8px';
+            avisoExito.style.color = '#fff';
+            avisoExito.style.fontWeight = 'bold';
+            avisoExito.style.zIndex = '9999';
+            avisoExito.style.backgroundColor = '#2ecc71'; // Verde Premium
+            avisoExito.innerHTML = `✅ ¡Cuenta Activada con éxito! Bienvenido a Mesa México.`;
+            document.body.appendChild(avisoExito);
+
+            setTimeout(() => { avisoExito.remove(); }, 3500);
+
         } else {
             alert(resultado.detail || "El PIN introducido es incorrecto o ya expiró.");
         }
@@ -286,25 +324,6 @@ async function ejecutarVerificacionUnica() {
     }
 }
 
-function ejecutarLogout() { 
-    localStorage.clear(); 
-    sesionMemoriaRam.nombre = null; 
-    sesionMemoriaRam.correo = null; 
-    sesionMemoriaRam.id = null;
-    actualizarInterfazUsuarioNav(); 
-    document.getElementById('contenedor-resultados').innerHTML = '<div class="alerta-vacia">Inicia sesión para consultar las mesas libres.</div>';
-    alert("Sesión cerrada."); 
-}
-
-function actualizarInterfazUsuarioNav() {
-    const nav = document.getElementById('bloque-autenticacion-nav'); 
-    const usuarioNombre = sesionMemoriaRam.nombre;
-    if (usuarioNombre) { 
-        nav.innerHTML = `<div style="display:flex; gap:1.2rem; align-items:center;"><p style="font-size:0.95rem; color:white; font-weight:600;">👤 Hola, <span style="color:#10b981;">${usuarioNombre}</span></p><button class="btn-nav" style="border-color:#da3743; color:#da3743;" onclick="ejecutarLogout()">Salir</button></div>`; 
-    } else { 
-        nav.innerHTML = `<button class="btn-nav" onclick="abrirModalSesion('login')">Iniciar Sesión</button><button class="btn-nav btn-nav-primario" onclick="abrirModalSesion('registro')">Crear Cuenta</button>`; 
-    }
-}
 
 // 🏢 MOTOR DE BÚSQUEDA REDISEÑADO ESTILO OPENTABLE - TOTALMENTE DINÁMICO
 async function ejecutarBusquedaReal() {
@@ -373,7 +392,7 @@ async function ejecutarBusquedaReal() {
 async function solicitarMesaHorarioRapido(restauranteId, horaTexto, cantidadPersonas) {
     // 🔒 LÓGICA CRM REAL: Intentamos traer el correo del usuario que hizo Login de verdad
     // (Ajusta 'correo_usuario' según el nombre que use tu sistema para guardar la sesión)
-    const correoCliente = localStorage.getItem('usuario_correo') || sessionStorage.getItem('usuario_correo'); 
+    const correoCliente = localStorage.getItem('usuario_') || sessionStorage.getItem('correo_usuario'); 
 
     // 🛑 FILTRO DE SEGURIDAD FRONTEND: Si no hay sesión activa, bloqueamos el clic
     if (!correoCliente) {

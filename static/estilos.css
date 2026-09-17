@@ -288,3 +288,20 @@ body {
     border-top-right-radius: 12px;
 }
 
+/* 🎨 BLINDAJE VISUAL PARA LA TABLA DE CLIENTES REGISTRADOS */
+table {
+    table-layout: fixed; /* Obliga a la tabla a respetar los anchos asignados */
+    width: 100%;
+}
+
+td {
+    white-space: nowrap;    /* Evita que el texto largo salte de línea rompiendo el renglón */
+    overflow: hidden;       /* Recorta el texto si llega a pasarse del límite */
+    text-overflow: ellipsis; /* Si el correo es muy largo, le pone tres puntitos amigables (ej: cinth...@gmail.com) */
+    max-width: 200px;       /* Ancho máximo seguro para cada columna */
+}
+
+/* Le damos un poco más de espacio exclusivo a la columna del correo por comodidad */
+td:nth-child(3) {
+    max-width: 250px;
+}
